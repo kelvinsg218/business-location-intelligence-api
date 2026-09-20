@@ -34,7 +34,7 @@ const jestGlobals = {
 };
 
 module.exports = [
-  { ignores: ['node_modules/', 'coverage/'] },
+  { ignores: ['node_modules/', 'coverage/', 'frontend/'] },
   js.configs.recommended,
   {
     files: ['**/*.js'],

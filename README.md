@@ -1,38 +1,143 @@
 # Business Location Intelligence API
 
 A REST API that analyzes the business competition/opportunity around a
-free-text location, without the client ever having to supply latitude or
-longitude. You give it a place, a business type and a radius; it geocodes
-the place, searches nearby establishments across a small grid of points for
-better coverage, deduplicates and filters the results, and returns a
-transparent opportunity analysis.
+free-text location — no latitude/longitude required from the client. Give it
+a place, a business type and a radius; it geocodes the place, searches
+nearby establishments across a small grid of points for better coverage,
+deduplicates and filters the results, and returns a transparent opportunity
+analysis. A React dashboard consumes the same API to visualize the result
+on an interactive map.
 
 ```
 GET /api/v1/locations/analyze?location=Vila+Velha,+ES&businessType=gym&radius=5
 ```
 
-## Quick start (mock mode — no Google API key needed)
+## Overview
 
-```bash
-npm install
-npm run dev
-curl "http://localhost:3000/api/v1/locations/analyze?location=Vila%20Velha,%20ES&businessType=gym&radius=5"
+This project demonstrates a complete, production-shaped backend: input
+validation, an external-API integration layer with provider abstraction
+(mock/real), geospatial processing, a scoring engine, structured error
+handling, rate limiting, logging, automated tests and OpenAPI documentation
+— plus a React frontend that consumes it end to end.
+
+It runs in two modes:
+- **Mock mode** (default): zero external calls, zero cost, deterministic output. This is how you should run it to explore the project.
+- **Google mode**: real Geocoding API + Places API (New) calls, opt-in only, behind an API key you provide.
+
+## Demo
+
+> Screenshots go here — add real captures of the running dashboard
+> (empty state, loading state, a completed analysis with the map and
+> Opportunity Score, and the Plans page) before publishing this README.
+> No production URL exists for this project; run it locally with the
+> instructions below.
+
+## Features
+
+### Implemented
+
+- Free-text location analysis (`GET /api/v1/locations/analyze`)
+- Geocoding + nearby-places search via pluggable providers (mock or Google)
+- Multi-point grid search strategy for wider-radius coverage
+- Deduplication by place ID and distance-based re-filtering
+- Opportunity Score (0–100) based on competitor density and spatial distribution
+- Competition level, density, average distance and analyzed-area metrics
+- Interactive map (Leaflet/OpenStreetMap) with competitor markers and search radius
+- Mock Mode indicator in the UI when the response was generated without calling Google
+- Input validation, rate limiting, structured error responses
+- Swagger/OpenAPI documentation (`/api-docs`)
+- Automated test suite (backend: Jest; frontend: Vitest + Testing Library)
+- A visual Plans/Subscriptions page previewing a possible future SaaS direction (see [Planned Features](#planned-features) — **not a working subscription system**)
+
+### Not implemented (see Planned Features)
+
+Accounts, authentication, billing, usage limits, analysis history and API
+access plans are **not built** — they're documented as a future direction
+only, kept out of the running application. See
+[`docs/future-saas/`](docs/future-saas/).
+
+## Architecture
+
+```
+React Frontend
+      ↓
+Node.js / Express REST API
+      ↓
+Geocoding Provider  (Mock or Google Geocoding API)
+      ↓
+Places Provider     (Mock or Google Places API "New")
+      ↓
+Location Analysis Engine   (grid search, dedup, distance filter)
+      ↓
+Opportunity Score
 ```
 
-The project ships with `USE_MOCK_GEOCODING=true` and `USE_MOCK_PLACES=true`
-by default (see `.env.example`), so it runs and returns realistic-looking
-data with **zero external calls and zero cost** out of the box. This is the
-intended way to develop against and test the API. Mock data is
-deterministic — the same request always returns the same result — and is
-generated procedurally (not from a fixed fixture file), so any location or
-business type you type works.
+Providers are injected, never imported directly by the controller/service —
+`src/config/providerFactory.js` is the only place that decides Mock vs
+Google, based on `USE_MOCK_GEOCODING` / `USE_MOCK_PLACES`. Swapping either
+vendor in the future means adding a new provider behind the same contract
+(`src/providers/*/*.contract.js`) and adding one branch to the factory.
 
-Useful mock-mode inputs for manual testing:
-- `location` containing `__notfound__` → simulates "address not found" (404).
-- `businessType=__zero_results__` → simulates a market with zero competitors found (200, not an error).
-- The spec's own example locations ("Vila Velha, ES", "Praia do Canto, Vitória", "São Paulo, SP", "Av. Paulista, São Paulo") resolve to their real-world coordinates.
+```
+Client
+  → GET /api/v1/locations/analyze
+  → locations.routes.js → locations.controller.js   (validates query with zod)
+  → locationAnalysis.service.js                      (orchestrates everything)
+       → geocodingProvider.geocode(text)
+       → placesCoverageSearch.run(...)               (grid + pagination + dedup + distance filter)
+             → placesProvider.search(...)
+       → opportunityScore.calculateBasicOpportunityScore(...)
+  → JSON response
+```
 
-## Switching to the real Google APIs
+## Tech Stack
+
+**Backend:** Node.js, Express, Zod (validation), Helmet, express-rate-limit,
+Pino (logging), Swagger/OpenAPI (swagger-jsdoc + swagger-ui-express), Jest +
+Supertest.
+
+**Frontend:** React 19, Vite, plain JavaScript (no TypeScript), CSS Modules,
+Leaflet + react-leaflet (OpenStreetMap tiles, no Google Maps billing),
+lucide-react icons, Vitest + Testing Library.
+
+## How It Works
+
+1. The user enters a location, business type, radius and optional keywords.
+2. The backend geocodes the free-text location to coordinates.
+3. A small grid of geographic search points is generated to cover the requested radius (a single Places call doesn't guarantee full coverage of a wide area).
+4. The Places provider is queried at each grid point (with pagination, capped by `MAX_PAGES_PER_POINT`).
+5. Results are deduplicated by place ID.
+6. Results are re-filtered by real (Haversine) distance from the original center, defensively, regardless of what the provider returned.
+7. Metrics are calculated: competitor count, density per km², average distance from center, competition level and the Opportunity Score.
+8. The frontend renders the analysis: map, Opportunity Score ring, metric cards and a results table.
+
+## Opportunity Score
+
+A 0–100 heuristic combining two signals: a density score (how many
+competitors per km² relative to the analyzed area) and a distribution score
+(how spread out or clustered they are). It is an **MVP-level indicator**,
+not a market-research product — it deliberately does not use
+rating/price/opening-hours data, which sit behind Google's more expensive
+Places SKU tier. See `src/services/opportunityScore.js` for the exact
+formula and weights, and the `analysis.notes` field the API returns
+alongside every score.
+
+## Mock Mode
+
+Enabled by default (`USE_MOCK_GEOCODING=true`, `USE_MOCK_PLACES=true` in
+`.env.example`). Mock data is deterministic — the same request always
+returns the same result — and generated procedurally, so any location or
+business type works. Useful sentinels for manual testing:
+
+- `location` containing `__notfound__` → simulates "address not found" (`404 LOCATION_NOT_FOUND`).
+- `businessType=__zero_results__` → simulates a market with zero competitors found (`200`, not an error).
+
+When the backend responds with mock data, the frontend dashboard shows a
+small **Mock Mode** badge next to the analysis summary — it reads this
+directly from the API response (`searchStrategy.provider`) and disappears
+automatically once real providers are configured.
+
+## Google API Mode
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/), enable **Geocoding API** and **Places API (New)** on a project, and create an API key.
 2. Copy `.env.example` to `.env` and set:
@@ -48,118 +153,145 @@ empty, the app still starts normally (with a warning logged); only an actual
 call to `/locations/analyze` fails, with a clear `503 CONFIGURATION_ERROR`
 and no network call ever made.
 
-## API
+The Places integration uses the current **Places API (New)** `searchText`
+endpoint with an explicit field mask requesting only what's needed (id,
+name, address, location, types, business status) — no rating, reviews,
+photos, price level, opening hours or phone number, which sit behind a
+pricier SKU tier and this project doesn't need.
 
-### `GET /api/v1/locations/analyze`
+## Installation
 
-| Query param | Required | Notes |
-|---|---|---|
-| `location` | yes | Free text: city, neighborhood, address ("Vila Velha, ES", "Av. Paulista, São Paulo"). |
-| `businessType` | yes | Free text ("gym", "academia", "coffee shop", "barbearia", ...). |
-| `radius` | yes | Kilometers, `0.1`–`MAX_RADIUS_KM` (default cap 20). Converted to meters internally. |
-| `keywords` | no | Comma-separated extra terms (e.g. `crossfit,24 horas`). |
-
-Response shape (success):
-
-```json
-{
-  "success": true,
-  "data": {
-    "query": { "location": "...", "businessType": "gym", "radiusKm": 5, "radiusMeters": 5000, "keywords": [] },
-    "resolvedLocation": { "formattedAddress": "...", "coordinates": { "lat": -20.33, "lng": -40.29 } },
-    "places": { "establishmentsFound": 9, "results": [ { "placeId", "name", "address", "location", "types", "primaryType", "businessStatus" } ] },
-    "searchStrategy": { "type": "grid", "pointsUsed": 7, "externalQueriesExecuted": 7, "failedQueries": 0, "provider": { "geocoding": "mock", "places": "mock" }, "limitations": ["..."] },
-    "analysis": { "competitorCount": 9, "densityPerKm2": 0.11, "avgDistanceFromCenterKm": 3.1, "competitionLevel": "medium", "opportunityScore": 62, "scoreBreakdown": { "...": "..." }, "notes": ["..."] },
-    "meta": { "generatedAt": "..." }
-  }
-}
-```
-
-`establishmentsFound` reflects what the search strategy found, not a
-guaranteed census of the area — see `searchStrategy.limitations`.
-`opportunityScore` (0–100, higher = more opportunity) is an MVP heuristic
-based only on competitor count, density and spatial distribution — it
-deliberately avoids `rating`/`price`/`opening hours`, which sit in Google's
-more expensive Enterprise pricing tier. Errors use
-`{ "success": false, "error": { "code", "message", "details" } }`.
-
-### `GET /health`
-
-Liveness check; never touches any provider.
-
-### `GET /api-docs`
-
-Swagger UI for the endpoint above.
-
-## Coverage strategy (why a single Places call isn't enough)
-
-Google's Places API (New) caps a single Text Search at 60 results across 3
-pages, and Nearby Search at 20 with no pagination at all — neither
-guarantees full coverage of a wide search area. This API compensates with a
-small grid of overlapping search points around the geocoded center (1 point
-for small radii, up to 7 by default for larger ones), deduplicates results
-by Google's place ID, and defensively re-filters by real distance from the
-original center. This is an engineering choice, not something Google
-documents or guarantees — the response is always explicit about it via
-`searchStrategy` and never claims to be exhaustive.
-
-## Cost controls
-
-| Env var | Default | Purpose |
-|---|---|---|
-| `MAX_RADIUS_KM` | 20 | Hard cap on the radius a client can request. |
-| `GRID_MIN_RADIUS_KM` | 3 | Below this radius, a single search point is used instead of a grid. |
-| `MAX_SEARCH_POINTS` | 7 | Grid size above the threshold (hard-ceiling of 19 enforced in code regardless of this value). |
-| `MAX_PAGES_PER_POINT` | 1 | Pages fetched per grid point (each page is a separate billed call). |
-| `HTTP_TIMEOUT_MS` | 8000 | Timeout for each external call. |
-
-There is no automatic retry anywhere — a failed external call is reported
-once, never retried, so a transient blip can never silently multiply cost.
-The Places field mask requests only Pro-tier fields (id, name, address,
-location, type, business status) and deliberately excludes
-rating/price/hours (Enterprise tier). Every analysis reports exactly how
-many external calls it made (`searchStrategy.externalQueriesExecuted`), both
-in the response and in the server logs.
-
-## Environment variables
-
-See `.env.example` for the full list with defaults. `GOOGLE_MAPS_API_KEY` is
-never read from anywhere but `process.env` and is never logged (the Places
-API key travels in a header, stripped from any logs; the Geocoding API key
-in a query string, masked before logging).
-
-## Development
+Backend:
 
 ```bash
-npm test            # run the full suite (all against mocks/fakes — no network, no cost)
-npm run test:watch
-npm run lint
-npm run dev          # nodemon, mock mode by default
-npm start            # plain node
+npm install
+npm run dev
 ```
 
-Tests are organized under `tests/unit` (pure logic, providers with
-`httpClient`/`fetch` mocked) and `tests/integration` (supertest against the
+Frontend:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # sets VITE_API_BASE_URL=http://localhost:3000
+npm run dev
+```
+
+Open `http://localhost:5173`. The backend listens on `http://localhost:3000`.
+
+### Troubleshooting: `[nodemon] clean exit` right after startup
+
+If `npm run dev` logs "listening on port 3000" and then immediately
+`[nodemon] clean exit - waiting for changes before restart`, it's not an
+application bug — something else on the machine already holds port 3000
+(most commonly a previous `npm run dev` process that didn't fully exit).
+
+```powershell
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 3000 -State Listen | Select-Object OwningProcess
+Stop-Process -Id <PID> -Force
+```
+
+```bash
+# macOS/Linux
+lsof -i :3000
+kill <PID>
+```
+
+## Environment Variables
+
+See `.env.example` (backend) and `frontend/.env.example` (frontend) for the
+full list with defaults.
+
+| Var | Default | Purpose |
+|---|---|---|
+| `PORT` | 3000 | Backend port |
+| `GOOGLE_MAPS_API_KEY` | *(empty)* | Required only when `USE_MOCK_*` is `false` |
+| `USE_MOCK_GEOCODING` | `true` | Use the mock geocoding provider |
+| `USE_MOCK_PLACES` | `true` | Use the mock places provider |
+| `MAX_RADIUS_KM` | 20 | Hard cap on the radius a client can request |
+| `GRID_MIN_RADIUS_KM` | 3 | Below this radius, a single search point is used instead of a grid |
+| `MAX_SEARCH_POINTS` | 7 | Grid size above the threshold (hard-ceiling of 19 enforced in code regardless of this value) |
+| `MAX_PAGES_PER_POINT` | 1 | Pages fetched per grid point (each page is a separate billed call) |
+| `HTTP_TIMEOUT_MS` | 8000 | Timeout for each external call |
+| `LOG_LEVEL` | info | Pino log level |
+| `VITE_API_BASE_URL` (frontend) | `http://localhost:3000` | Base URL the frontend calls — never a Google key |
+
+`GOOGLE_MAPS_API_KEY` is only ever read from `process.env`, never logged
+(the Places API key travels in a header, stripped from any logs; the
+Geocoding API key in a query string, masked before logging), and never sent
+to the frontend.
+
+## API Documentation
+
+Swagger UI: `http://localhost:3000/api-docs`
+
+## Testing
+
+```bash
+npm test              # backend — Jest, all against mocks/fakes, no network, no cost
+npm run test:coverage
+npm run lint
+
+cd frontend
+npm test               # frontend — Vitest + Testing Library
+npm run lint
+npm run build           # production build
+```
+
+Backend tests are organized under `tests/unit` (pure logic, providers with
+`httpClient`/`fetch` mocked) and `tests/integration` (Supertest against the
 Express app, wired to the mock providers — except `missingApiKey.test.js`,
 which wires the real providers with the key removed to prove the
-config-error path never touches the network).
+config-error path never touches the network). Coverage includes invalid
+parameters, an unresolvable location, a zero-results market, a total
+grid-search failure and the missing-API-key path.
 
-## Architecture
+## Security
 
-```
-Client
-  → GET /api/v1/locations/analyze
-  → locations.routes.js → locations.controller.js   (validates query with zod)
-  → locationAnalysis.service.js                      (orchestrates everything)
-       → geocodingProvider.geocode(text)             ← Mock or Google, chosen by config/providerFactory.js
-       → placesCoverageSearch.run(...)               (grid + pagination + dedup + distance filter — vendor-agnostic)
-             → placesProvider.search(...)            ← Mock or Google (Places API New, Text Search), chosen by config/providerFactory.js
-       → opportunityScore.calculateBasicOpportunityScore(...)
-  → JSON response
-```
+- No secrets in the repository or its history; `.env` is gitignored on both backend and frontend, `.env.example` files hold variable names only.
+- `GOOGLE_MAPS_API_KEY` lives server-side only — never in a `VITE_*` variable, never in a response body.
+- Helmet, rate limiting (100 req / 15 min by default) and a global error handler that never leaks stack traces or raw upstream error bodies to the client.
+- CORS is open (`cors()` with no origin restriction) — a deliberate choice for a public, read-only, unauthenticated API with no session/cookie to protect, not an oversight.
+- No automatic retries on external calls, so a transient failure can never silently multiply cost.
 
-Providers are injected, never imported directly by the controller/service —
-`src/config/providerFactory.js` is the only place that decides Mock vs
-Google, based on `USE_MOCK_GEOCODING` / `USE_MOCK_PLACES`. Swapping either
-vendor in the future means adding a new provider behind the same contract
-(`src/providers/*/*.contract.js`) and adding one branch to the factory.
+## Current Features
+
+Everything under [Features → Implemented](#features) above is real and
+working today, against either mock or real Google providers.
+
+## Planned Features
+
+The following are **not implemented** in this version. They exist only as
+documentation and non-executed example code under
+[`docs/future-saas/`](docs/future-saas/) and
+[`examples/future-saas/`](examples/future-saas/), and as a visual-only
+preview on the frontend's Plans page:
+
+- User accounts and authentication
+- Real subscriptions and billing
+- Per-plan usage limits enforced server-side (entitlements)
+- Saved analysis history
+- Data export
+- Public API access plan
+- Usage tracking
+
+## Disclaimer
+
+This tool does not find every establishment that exists in an area — it
+reports what its search strategy (a bounded grid of point queries against a
+third-party Places API) actually returned, and is explicit about that via
+each response's `searchStrategy.limitations`. `opportunityScore` is this
+project's own heuristic metric, based only on competitor count, density and
+spatial distribution — it is not a guarantee of business success, not a
+complete market census, and not a substitute for real-world due diligence.
+
+## Author
+
+Kelvin Simões — Backend Developer
+
+## License
+
+Portfolio project. No license file has been added; treat the source as
+"all rights reserved" unless a `LICENSE` file is later added to this
+repository.

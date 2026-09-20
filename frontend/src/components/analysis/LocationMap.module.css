@@ -1,0 +1,34 @@
+.mapCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  height: 420px;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.mapFallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 0 24px;
+}
+
+.divIcon {
+  background: transparent;
+  border: none;
+}
+
+@media (max-width: 960px) {
+  .mapCard {
+    height: 320px;
+  }
+}

@@ -1,0 +1,19 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--color-negative-soft);
+  border: 1px solid rgba(240, 101, 74, 0.35);
+  border-radius: var(--radius-md);
+  color: var(--color-negative);
+}
+
+.banner p {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.banner svg {
+  flex-shrink: 0;
+}

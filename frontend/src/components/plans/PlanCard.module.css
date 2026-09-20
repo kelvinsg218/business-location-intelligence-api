@@ -1,0 +1,138 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.highlighted {
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 1px var(--color-accent-border);
+}
+
+.badgeWrap {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-top: 4px;
+}
+
+.audience {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  min-height: 36px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.priceAmount {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.pricePeriod {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.priceNote {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 20px;
+  flex: 1;
+}
+
+.featureList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.checkIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-accent-hover);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailsButton {
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.detailsButton:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.ctaPrimary {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ctaPrimary:hover {
+  background: var(--color-accent-hover);
+}
+
+.ctaDisabled {
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.plannedNote {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: center;
+}

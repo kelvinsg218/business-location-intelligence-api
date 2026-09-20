@@ -1,0 +1,44 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.summary {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.summary strong {
+  color: var(--color-text-primary);
+}
+
+.topRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.resultsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resultsTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.resultsCount {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 960px) {
+  .topRow {
+    grid-template-columns: 1fr;
+  }
+}
