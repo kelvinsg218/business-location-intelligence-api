@@ -15,6 +15,7 @@ function buildApp(overrides = {}) {
     maxSearchPoints: 7,
     gridMinRadiusKm: 3,
     maxPagesPerPoint: 1,
+    enableCommercialEcosystem: true,
     ...overrides,
   });
 }
@@ -111,5 +112,42 @@ describe('GET /api/v1/locations/analyze', () => {
 
     expect(response.status).toBe(429);
     expect(response.body.error.code).toBe('PLACES_QUOTA_EXCEEDED');
+  });
+});
+
+describe('GET /api/v1/locations/analyze — commercialEcosystem', () => {
+  it('populates commercialEcosystem for a recognized Business Profile, with the required careful framing', async () => {
+    const response = await request(buildApp())
+      .get(ENDPOINT)
+      .query({ location: 'Vila Velha, ES', businessType: 'gym', radius: 5 });
+
+    expect(response.status).toBe(200);
+    const { commercialEcosystem } = response.body.data;
+    expect(commercialEcosystem).not.toBeNull();
+    expect(commercialEcosystem.businessProfile).toBe('gym');
+    expect(commercialEcosystem.complementary.available).toBe(true);
+    expect(commercialEcosystem.trafficGenerators.available).toBe(true);
+    expect(commercialEcosystem.notes.join(' ')).toMatch(/may indicate the presence of a commercially compatible ecosystem/i);
+    expect(commercialEcosystem.notes.join(' ')).not.toMatch(/will generate customers|vai gerar clientes/i);
+  });
+
+  it('returns commercialEcosystem: null for a businessType with no profile in the catalog', async () => {
+    const response = await request(buildApp())
+      .get(ENDPOINT)
+      .query({ location: 'Vila Velha, ES', businessType: 'car wash', radius: 5 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.commercialEcosystem).toBeNull();
+    // Every other field is unaffected by this new subsystem.
+    expect(response.body.data.places.establishmentsFound).toBeGreaterThan(0);
+  });
+
+  it('returns commercialEcosystem: null when disabled via enableCommercialEcosystem:false, regardless of profile match', async () => {
+    const response = await request(buildApp({ enableCommercialEcosystem: false }))
+      .get(ENDPOINT)
+      .query({ location: 'Vila Velha, ES', businessType: 'gym', radius: 5 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.commercialEcosystem).toBeNull();
   });
 });

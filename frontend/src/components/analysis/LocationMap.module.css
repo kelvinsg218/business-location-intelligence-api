@@ -3,11 +3,47 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   height: 420px;
+  display: flex;
+  flex-direction: column;
 }
 
 .map {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   width: 100%;
+}
+
+.layerToggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.layerToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.layerToggle input {
+  cursor: pointer;
+  accent-color: var(--color-accent);
+}
+
+.layerDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .mapFallback {

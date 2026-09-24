@@ -7,7 +7,7 @@
 .header h1 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-heading);
 }
 
 .header p {
@@ -27,7 +27,7 @@
 .matrixSection h2 {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-heading);
   margin-bottom: 12px;
 }
 

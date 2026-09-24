@@ -8,6 +8,7 @@ const { analyze } = require('../services/locationAnalysis.service');
 // middleware automatically, so no manual try/catch + next(err) wrapper is needed here.
 function createLocationsController({
   geocodingProvider, placesProvider, providerNames, maxRadiusKm, maxSearchPoints, gridMinRadiusKm, maxPagesPerPoint,
+  enableCommercialEcosystem,
 }) {
   async function analyzeLocation(req, res) {
     const validation = validateLocationQuery(req.query, maxRadiusKm);
@@ -30,6 +31,7 @@ function createLocationsController({
       maxSearchPoints,
       gridMinRadiusKm,
       maxPagesPerPoint,
+      enableCommercialEcosystem,
     });
 
     res.status(200).json({ success: true, data: result });

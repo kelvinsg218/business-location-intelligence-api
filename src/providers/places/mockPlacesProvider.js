@@ -29,6 +29,13 @@ const DENSITY_DIVISOR_BY_CATEGORY = {
   supermarket: 12,
   hair_care: 9,
   beauty_salon: 11,
+  clothing_store: 6,
+  bakery: 7,
+  bar: 8,
+  convenience_store: 9,
+  medical_clinic: 10,
+  dental_clinic: 11,
+  pet_store: 13,
 };
 const DEFAULT_DENSITY_DIVISOR = 15;
 
@@ -135,6 +142,32 @@ class MockPlacesProvider extends PlacesProviderContract {
       places: page.map((c) => c.place),
       nextPageToken: hasMore ? String(offset + PAGE_SIZE) : null,
     };
+  }
+
+  // Commercial Ecosystem's type-filtered search. Unlike search(), the
+  // requested types ARE already real Google types (no free-text mapping
+  // needed) — each is queried against the same deterministic cell/hash
+  // system as search(), reusing collectCandidates() as-is. Capped at
+  // PAGE_SIZE, mirroring Nearby Search's real (pagination-free) result cap.
+  async searchByTypes({ lat, lng, radiusMeters, includedTypes }) {
+    const radiusKm = radiusMeters / 1000;
+    const byPlaceId = new Map();
+
+    (includedTypes || []).forEach((type) => {
+      const candidates = collectCandidates({
+        lat, lng, radiusKm, categoryKey: type, googleType: type,
+      });
+      candidates.forEach((candidate) => {
+        if (!byPlaceId.has(candidate.place.placeId)) {
+          byPlaceId.set(candidate.place.placeId, candidate);
+        }
+      });
+    });
+
+    const sorted = [...byPlaceId.values()]
+      .sort((a, b) => a.distanceKm - b.distanceKm || a.place.placeId.localeCompare(b.place.placeId));
+
+    return { places: sorted.slice(0, PAGE_SIZE).map((c) => c.place) };
   }
 }
 

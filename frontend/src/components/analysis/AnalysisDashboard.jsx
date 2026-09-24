@@ -2,12 +2,13 @@ import OpportunityScore from './OpportunityScore.jsx';
 import MetricsGrid from './MetricsGrid.jsx';
 import LocationMap from './LocationMap.jsx';
 import PlacesTable from './PlacesTable.jsx';
+import CommercialEcosystemSection from './CommercialEcosystemSection.jsx';
 import Badge from '../common/Badge.jsx';
 import styles from './AnalysisDashboard.module.css';
 
 function AnalysisDashboard({ data }) {
   const {
-    query, resolvedLocation, places, analysis, searchStrategy,
+    query, resolvedLocation, places, analysis, searchStrategy, commercialEcosystem,
   } = data;
 
   const isMockData = searchStrategy?.provider?.geocoding === 'mock'
@@ -37,6 +38,8 @@ function AnalysisDashboard({ data }) {
           radiusKm={query.radiusKm}
           places={places.results}
           resolvedAddress={resolvedLocation.formattedAddress}
+          complementaryPlaces={commercialEcosystem?.complementary?.results}
+          trafficGeneratorPlaces={commercialEcosystem?.trafficGenerators?.results}
         />
         <OpportunityScore score={analysis.opportunityScore} competitionLevel={analysis.competitionLevel} />
       </div>
@@ -55,6 +58,8 @@ function AnalysisDashboard({ data }) {
         </p>
         <PlacesTable places={places.results} center={resolvedLocation.coordinates} />
       </section>
+
+      <CommercialEcosystemSection commercialEcosystem={commercialEcosystem} />
     </div>
   );
 }

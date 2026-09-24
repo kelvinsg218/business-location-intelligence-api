@@ -11,6 +11,7 @@ describe('loadEnv', () => {
     expect(env.GOOGLE_MAPS_API_KEY).toBe('');
     expect(env.USE_MOCK_GEOCODING).toBe(true);
     expect(env.USE_MOCK_PLACES).toBe(true);
+    expect(env.ENABLE_COMMERCIAL_ECOSYSTEM).toBe(true);
     expect(env.MAX_RADIUS_KM).toBe(20);
     expect(env.GRID_MIN_RADIUS_KM).toBe(3);
     expect(env.MAX_SEARCH_POINTS).toBe(7);
@@ -24,6 +25,7 @@ describe('loadEnv', () => {
     expect(loadEnv({ USE_MOCK_PLACES: 'FALSE' }).USE_MOCK_PLACES).toBe(false);
     expect(loadEnv({ USE_MOCK_PLACES: 'true' }).USE_MOCK_PLACES).toBe(true);
     expect(loadEnv({ USE_MOCK_GEOCODING: 'false', USE_MOCK_PLACES: 'true' }).USE_MOCK_GEOCODING).toBe(false);
+    expect(loadEnv({ ENABLE_COMMERCIAL_ECOSYSTEM: 'false' }).ENABLE_COMMERCIAL_ECOSYSTEM).toBe(false);
   });
 
   it('coerces numeric env vars from strings', () => {

@@ -1,6 +1,6 @@
 {
   "name": "business-location-intelligence-api",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "REST API that analyzes business competition/opportunity within a radius of a free-text location, using Google Geocoding + Places (New) APIs.",
   "main": "src/server.js",
   "license": "UNLICENSED",

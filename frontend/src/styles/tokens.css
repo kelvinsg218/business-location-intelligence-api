@@ -4,14 +4,15 @@
   --color-bg-elevated: #101014;
   --color-surface: #131317;
   --color-surface-hover: #191920;
-  --color-border: #232329;
+  --color-border: #242030;
   --color-border-strong: #2f2f38;
 
   /* Text */
-  --color-text-primary: #f2f2f5;
+  --color-text-primary: #f1eff9;
   --color-text-secondary: #9a9aa6;
   --color-text-muted: #84848f;
   --color-text-on-accent: #ffffff;
+  --color-heading: #c4b5fd;
 
   /* Brand */
   --color-accent: #8b5cf6;

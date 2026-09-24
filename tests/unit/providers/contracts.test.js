@@ -35,4 +35,21 @@ describe('PlacesProviderContract', () => {
     const result = await new FakeProvider().search({ lat: 0, lng: 0, radiusMeters: 1000, businessType: 'gym' });
     expect(result).toEqual({ places: [], nextPageToken: null });
   });
+
+  it('throws if searchByTypes() is not overridden', async () => {
+    const contract = new PlacesProviderContract();
+    await expect(contract.searchByTypes({})).rejects.toThrow(/must be implemented/);
+  });
+
+  it('allows a subclass to override searchByTypes()', async () => {
+    class FakeProvider extends PlacesProviderContract {
+      async searchByTypes() {
+        return { places: [] };
+      }
+    }
+    const result = await new FakeProvider().searchByTypes({
+      lat: 0, lng: 0, radiusMeters: 1000, includedTypes: ['gym'],
+    });
+    expect(result).toEqual({ places: [] });
+  });
 });

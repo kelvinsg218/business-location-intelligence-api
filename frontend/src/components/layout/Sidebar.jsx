@@ -1,5 +1,5 @@
 import {
-  Search, History, Compass, CreditCard, BookOpen, X, MapPinned,
+  Search, History, Compass, CreditCard, BookOpen, X, MapPinned, LogOut,
 } from 'lucide-react';
 import Badge from '../common/Badge.jsx';
 import { API_BASE_URL } from '../../services/locationApi.js';
@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 const DOCS_URL = `${API_BASE_URL}/api-docs`;
 
 function Sidebar({
-  isOpen, onClose, activeView, onNavigate,
+  isOpen, onClose, activeView, onNavigate, onLogout,
 }) {
   return (
     <>
@@ -92,6 +92,10 @@ function Sidebar({
               Ver planos
             </button>
           </div>
+          <button type="button" className={styles.logoutButton} onClick={onLogout}>
+            <LogOut size={16} aria-hidden="true" />
+            Sair
+          </button>
         </div>
       </aside>
     </>

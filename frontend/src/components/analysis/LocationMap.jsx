@@ -1,12 +1,23 @@
-import { Component, useEffect, useMemo } from 'react';
+import {
+  Component, useEffect, useMemo, useState,
+} from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   MapContainer, TileLayer, Marker, Popup, Circle, useMap,
 } from 'react-leaflet';
 import L from 'leaflet';
-import { MapPin, Building2, Store } from 'lucide-react';
+import {
+  MapPin, Building2, Store, Puzzle, Users,
+} from 'lucide-react';
 import { humanizeType } from '../../utils/formatters.js';
+import { ecosystemGroupLabel } from '../../utils/ecosystemCategory.js';
 import styles from './LocationMap.module.css';
+
+// New, distinct hues — deliberately not --color-positive/--color-negative
+// (already mean "low/high competition" on the Badge elsewhere in the
+// dashboard) and not --color-accent (reserved for the analysis center).
+const COMPLEMENTARY_COLOR = '#14b8a6';
+const TRAFFIC_GENERATOR_COLOR = '#3b82f6';
 
 function hasValidCoords(point) {
   return Number.isFinite(point?.lat) && Number.isFinite(point?.lng);
@@ -91,7 +102,7 @@ function FitBounds({ center, radiusKm }) {
 }
 
 function LocationMap({
-  center, radiusKm, places, resolvedAddress,
+  center, radiusKm, places, resolvedAddress, complementaryPlaces = [], trafficGeneratorPlaces = [],
 }) {
   const centerIcon = useMemo(() => buildDivIcon(Building2, {
     size: 34, background: '#8b5cf6', color: '#ffffff',
@@ -99,8 +110,22 @@ function LocationMap({
   const placeIcon = useMemo(() => buildDivIcon(Store, {
     size: 26, background: '#1c1c22', color: '#e4e4e9',
   }), []);
+  const complementaryIcon = useMemo(() => buildDivIcon(Puzzle, {
+    size: 24, background: COMPLEMENTARY_COLOR, color: '#ffffff',
+  }), []);
+  const trafficGeneratorIcon = useMemo(() => buildDivIcon(Users, {
+    size: 24, background: TRAFFIC_GENERATOR_COLOR, color: '#ffffff',
+  }), []);
+
+  const [showCompetitors, setShowCompetitors] = useState(true);
+  const [showComplementary, setShowComplementary] = useState(true);
+  const [showTrafficGenerators, setShowTrafficGenerators] = useState(true);
 
   const validPlaces = (places || []).filter((place) => hasValidCoords(place?.location));
+  const validComplementary = (complementaryPlaces || []).filter((place) => hasValidCoords(place?.location));
+  const validTrafficGenerators = (trafficGeneratorPlaces || []).filter((place) => hasValidCoords(place?.location));
+
+  const hasEcosystemLayers = validComplementary.length > 0 || validTrafficGenerators.length > 0;
 
   if (!hasValidCoords(center)) {
     return (
@@ -116,6 +141,29 @@ function LocationMap({
   return (
     <MapErrorBoundary>
       <div className={styles.mapCard}>
+        {hasEcosystemLayers && (
+          <div className={styles.layerToggles}>
+            <label className={styles.layerToggle}>
+              <input type="checkbox" checked={showCompetitors} onChange={(e) => setShowCompetitors(e.target.checked)} />
+              <span className={styles.layerDot} style={{ background: '#1c1c22' }} aria-hidden="true" />
+              Concorrentes
+            </label>
+            {validComplementary.length > 0 && (
+              <label className={styles.layerToggle}>
+                <input type="checkbox" checked={showComplementary} onChange={(e) => setShowComplementary(e.target.checked)} />
+                <span className={styles.layerDot} style={{ background: COMPLEMENTARY_COLOR }} aria-hidden="true" />
+                {ecosystemGroupLabel('complementary')}
+              </label>
+            )}
+            {validTrafficGenerators.length > 0 && (
+              <label className={styles.layerToggle}>
+                <input type="checkbox" checked={showTrafficGenerators} onChange={(e) => setShowTrafficGenerators(e.target.checked)} />
+                <span className={styles.layerDot} style={{ background: TRAFFIC_GENERATOR_COLOR }} aria-hidden="true" />
+                {ecosystemGroupLabel('trafficGenerators')}
+              </label>
+            )}
+          </div>
+        )}
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={13}
@@ -144,8 +192,32 @@ function LocationMap({
             </Popup>
           </Marker>
 
-          {validPlaces.map((place) => (
+          {showCompetitors && validPlaces.map((place) => (
             <Marker key={place.placeId} position={[place.location.lat, place.location.lng]} icon={placeIcon}>
+              <Popup>
+                <strong>{place.name}</strong>
+                <br />
+                {humanizeType(place.primaryType)}
+                <br />
+                {place.address}
+              </Popup>
+            </Marker>
+          ))}
+
+          {showComplementary && validComplementary.map((place) => (
+            <Marker key={place.placeId} position={[place.location.lat, place.location.lng]} icon={complementaryIcon}>
+              <Popup>
+                <strong>{place.name}</strong>
+                <br />
+                {humanizeType(place.primaryType)}
+                <br />
+                {place.address}
+              </Popup>
+            </Marker>
+          ))}
+
+          {showTrafficGenerators && validTrafficGenerators.map((place) => (
+            <Marker key={place.placeId} position={[place.location.lat, place.location.lng]} icon={trafficGeneratorIcon}>
               <Popup>
                 <strong>{place.name}</strong>
                 <br />

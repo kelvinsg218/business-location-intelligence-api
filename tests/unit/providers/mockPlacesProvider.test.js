@@ -95,4 +95,62 @@ describe('MockPlacesProvider', () => {
     expect(statuses).toContain('CLOSED_PERMANENTLY');
     expect(statuses).toContain('OPERATIONAL');
   });
+
+  describe('searchByTypes', () => {
+    it('is deterministic: the same query returns the same places in the same order', async () => {
+      const query = {
+        lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: 5000, includedTypes: ['sporting_goods_store', 'yoga_studio'],
+      };
+      const a = await provider.searchByTypes(query);
+      const b = await provider.searchByTypes(query);
+      expect(a).toEqual(b);
+    });
+
+    it('only returns places within the requested radius', async () => {
+      const radiusKm = 5;
+      const result = await provider.searchByTypes({
+        lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: radiusKm * 1000, includedTypes: ['corporate_office', 'shopping_mall'],
+      });
+
+      expect(result.places.length).toBeGreaterThan(0);
+      result.places.forEach((place) => {
+        expect(haversineDistanceKm(VILA_VELHA, place.location)).toBeLessThanOrEqual(radiusKm + 1e-6);
+      });
+    });
+
+    it('varies results by included types and tags each place with the type that produced it', async () => {
+      const base = { lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: 20000 };
+      const gyms = await provider.searchByTypes({ ...base, includedTypes: ['gym'] });
+      const malls = await provider.searchByTypes({ ...base, includedTypes: ['shopping_mall'] });
+
+      expect(gyms.places.map((p) => p.placeId)).not.toEqual(malls.places.map((p) => p.placeId));
+      gyms.places.forEach((place) => expect(place.primaryType).toBe('gym'));
+      malls.places.forEach((place) => expect(place.primaryType).toBe('shopping_mall'));
+    });
+
+    it('combines multiple included types into one result set without cross-type duplicates', async () => {
+      const combined = await provider.searchByTypes({
+        lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: 20000, includedTypes: ['gym', 'shopping_mall'],
+      });
+      const ids = combined.places.map((p) => p.placeId);
+      expect(new Set(ids).size).toBe(ids.length);
+      const primaryTypes = new Set(combined.places.map((p) => p.primaryType));
+      expect(primaryTypes.has('gym') || primaryTypes.has('shopping_mall')).toBe(true);
+    });
+
+    it('caps results at 20 with no pagination, mirroring the real Nearby Search cap', async () => {
+      const result = await provider.searchByTypes({
+        lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: 20000, includedTypes: ['corporate_office', 'shopping_mall', 'university', 'bakery'],
+      });
+      expect(result.places.length).toBeLessThanOrEqual(20);
+      expect(result.nextPageToken).toBeUndefined();
+    });
+
+    it('returns an empty result set when includedTypes is empty', async () => {
+      const result = await provider.searchByTypes({
+        lat: VILA_VELHA.lat, lng: VILA_VELHA.lng, radiusMeters: 5000, includedTypes: [],
+      });
+      expect(result.places).toEqual([]);
+    });
+  });
 });

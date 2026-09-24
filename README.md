@@ -12,6 +12,23 @@ on an interactive map.
 GET /api/v1/locations/analyze?location=Vila+Velha,+ES&businessType=gym&radius=5
 ```
 
+## Current Version
+
+**v0.2.0 — Business Profiles & Commercial Ecosystem**
+
+Builds on the v0.1.0 MVP with a broader catalog of recognized Business
+Profiles and the Commercial Ecosystem analysis (complementary businesses
+and potential traffic generators), plus a temporary development login
+screen and a visual refinement pass on the dashboard.
+
+Key changes:
+- Business Profiles expanded to 15 recognized business types (from 3)
+- Commercial Ecosystem: complementary businesses and potential traffic generators, with dedicated map layers/filters
+- Temporary development login screen (`root` / `1`) — not production security, see [Development Login](#development-login)
+- Visual refinements to the dark/purple design system
+
+See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
 ## Overview
 
 This project demonstrates a complete, production-shaped backend: input
@@ -42,8 +59,10 @@ It runs in two modes:
 - Deduplication by place ID and distance-based re-filtering
 - Opportunity Score (0–100) based on competitor density and spatial distribution
 - Competition level, density, average distance and analyzed-area metrics
-- Interactive map (Leaflet/OpenStreetMap) with competitor markers and search radius
+- Commercial Ecosystem analysis (complementary businesses and potential traffic generators) for business types with a recognized Business Profile — 15 profiles currently, see `src/config/businessProfiles.js`
+- Interactive map (Leaflet/OpenStreetMap) with competitor markers, search radius, and toggleable Commercial Ecosystem layers
 - Mock Mode indicator in the UI when the response was generated without calling Google
+- Temporary development login screen gating entry to the app (see [Development Login](#development-login) — **not production authentication**)
 - Input validation, rate limiting, structured error responses
 - Swagger/OpenAPI documentation (`/api-docs`)
 - Automated test suite (backend: Jest; frontend: Vitest + Testing Library)
@@ -51,10 +70,12 @@ It runs in two modes:
 
 ### Not implemented (see Planned Features)
 
-Accounts, authentication, billing, usage limits, analysis history and API
-access plans are **not built** — they're documented as a future direction
-only, kept out of the running application. See
-[`docs/future-saas/`](docs/future-saas/).
+Real user accounts, authentication, billing, usage limits, analysis
+history and API access plans are **not built** — they're documented as a
+future direction only, kept out of the running application. See
+[`docs/future-saas/`](docs/future-saas/). The temporary development login
+above is a client-side entry gate, not an account/authentication system,
+and does not change this section's scope.
 
 ## Architecture
 
@@ -121,6 +142,32 @@ rating/price/opening-hours data, which sit behind Google's more expensive
 Places SKU tier. See `src/services/opportunityScore.js` for the exact
 formula and weights, and the `analysis.notes` field the API returns
 alongside every score.
+
+## Commercial Ecosystem
+
+For business types with a recognized **Business Profile** (`src/config/businessProfiles.js`
+— 15 profiles in this version, e.g. `gym`, `restaurant`, `pharmacy`,
+`coffee_shop`, `bakery`, `bar`, `pet_shop`), the response also includes a
+`commercialEcosystem` object categorizing nearby places into two groups,
+distinct from competitors:
+
+- **Complementary businesses** — places that may indicate a commercially
+  compatible ecosystem (e.g. a yoga studio near a gym).
+- **Potential traffic generators** — places that may contribute to
+  foot traffic in the area (e.g. a university near a coffee shop).
+
+Both groups are found with a single Google Places Nearby Search call each
+(type-filtered, not free text), at the analyzed center point only — a
+deliberate cost/coverage trade-off, not a claim of exhaustive coverage. The
+response is explicit about this via `commercialEcosystem.notes`, and about
+which specific types were searched via each group's `categoriesSearched`.
+A group that fails upstream (timeout/quota) degrades to
+`available: false` rather than failing the whole request — the existing
+competitor analysis is never affected by a Commercial Ecosystem failure.
+
+`commercialEcosystem` is `null` when `businessType` has no Phase 1 profile,
+or when `ENABLE_COMMERCIAL_ECOSYSTEM=false`. This never implies demand,
+foot traffic, or business outcomes — see [Disclaimer](#disclaimer).
 
 ## Mock Mode
 
@@ -213,6 +260,7 @@ full list with defaults.
 | `GRID_MIN_RADIUS_KM` | 3 | Below this radius, a single search point is used instead of a grid |
 | `MAX_SEARCH_POINTS` | 7 | Grid size above the threshold (hard-ceiling of 19 enforced in code regardless of this value) |
 | `MAX_PAGES_PER_POINT` | 1 | Pages fetched per grid point (each page is a separate billed call) |
+| `ENABLE_COMMERCIAL_ECOSYSTEM` | `true` | Toggles Commercial Ecosystem analysis (adds at most 2 extra Places calls per analysis, only for a recognized Business Profile) independently of `USE_MOCK_PLACES` |
 | `HTTP_TIMEOUT_MS` | 8000 | Timeout for each external call |
 | `LOG_LEVEL` | info | Pino log level |
 | `VITE_API_BASE_URL` (frontend) | `http://localhost:3000` | Base URL the frontend calls — never a Google key |
@@ -255,6 +303,17 @@ grid-search failure and the missing-API-key path.
 - CORS is open (`cors()` with no origin restriction) — a deliberate choice for a public, read-only, unauthenticated API with no session/cookie to protect, not an oversight.
 - No automatic retries on external calls, so a transient failure can never silently multiply cost.
 
+## Development Login
+
+The frontend currently sits behind a minimal login screen (`root` / `1`)
+before the dashboard is reachable. This is a **temporary, client-side-only
+placeholder** — implemented in `frontend/src/auth/devAuth.js`, gating entry
+via `sessionStorage` with no backend involvement and no effect on API
+security (the backend API itself remains unauthenticated, as described in
+[Security](#security) above). It exists to give the app a real entry flow
+during development and is meant to be replaced entirely once real
+accounts/authentication are implemented (see [Planned Features](#planned-features)).
+
 ## Current Features
 
 Everything under [Features → Implemented](#features) above is real and
@@ -286,9 +345,23 @@ project's own heuristic metric, based only on competitor count, density and
 spatial distribution — it is not a guarantee of business success, not a
 complete market census, and not a substitute for real-world due diligence.
 
+`commercialEcosystem` results (complementary businesses and potential
+traffic generators) are informational context, not a demand signal: the
+presence of complementary businesses does not mean there is customer
+demand, and low competition does not automatically mean a good opportunity
+— it may simply mean insufficient demand. Coverage is a single search at
+the analyzed center point, not the full competitor grid, so
+`establishmentsFound` for these groups is never a complete census either.
+
 ## Author
 
 Kelvin Simões — Backend Developer
+
+Developed with Claude (Anthropic) as an assistance tool for implementation,
+code review, architecture discussions and debugging. The technologies
+listed under [Tech Stack](#tech-stack) reflect what the project actually
+uses — not necessarily the author's prior hands-on expertise with each one
+individually.
 
 ## License
 

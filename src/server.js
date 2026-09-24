@@ -19,6 +19,7 @@ const app = createApp({
   maxSearchPoints: env.MAX_SEARCH_POINTS,
   gridMinRadiusKm: env.GRID_MIN_RADIUS_KM,
   maxPagesPerPoint: env.MAX_PAGES_PER_POINT,
+  enableCommercialEcosystem: env.ENABLE_COMMERCIAL_ECOSYSTEM,
 });
 
 const server = app.listen(env.PORT, () => {

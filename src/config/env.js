@@ -18,6 +18,7 @@ const envSchema = z.object({
   GOOGLE_MAPS_API_KEY: z.string().optional().default(''),
   USE_MOCK_GEOCODING: booleanString(true),
   USE_MOCK_PLACES: booleanString(true),
+  ENABLE_COMMERCIAL_ECOSYSTEM: booleanString(true),
   MAX_RADIUS_KM: z.coerce.number().positive().default(20),
   GRID_MIN_RADIUS_KM: z.coerce.number().positive().default(3),
   MAX_SEARCH_POINTS: z.coerce.number().int().positive().default(7),

@@ -101,3 +101,63 @@ describe('locationAnalysis.service.analyze (error propagation with fakes)', () =
     })).rejects.toMatchObject({ statusCode: 429, code: 'PLACES_QUOTA_EXCEEDED' });
   });
 });
+
+describe('locationAnalysis.service.analyze — commercialEcosystem isolation', () => {
+  it('defaults to commercialEcosystem: null when enableCommercialEcosystem is not passed (backward compatible)', async () => {
+    const result = await analyze({
+      location: 'Vila Velha, ES',
+      businessType: 'gym',
+      radiusKm: 5,
+      keywords: [],
+      geocodingProvider: new MockGeocodingProvider(),
+      placesProvider: new MockPlacesProvider(),
+      ...DEFAULT_DEPS,
+    });
+
+    expect(result.commercialEcosystem).toBeNull();
+  });
+
+  it('populates commercialEcosystem for a known profile without perturbing analysis/places/searchStrategy', async () => {
+    const withEcosystem = await analyze({
+      location: 'Vila Velha, ES',
+      businessType: 'gym',
+      radiusKm: 5,
+      keywords: [],
+      geocodingProvider: new MockGeocodingProvider(),
+      placesProvider: new MockPlacesProvider(),
+      ...DEFAULT_DEPS,
+      enableCommercialEcosystem: true,
+    });
+    const withoutEcosystem = await analyze({
+      location: 'Vila Velha, ES',
+      businessType: 'gym',
+      radiusKm: 5,
+      keywords: [],
+      geocodingProvider: new MockGeocodingProvider(),
+      placesProvider: new MockPlacesProvider(),
+      ...DEFAULT_DEPS,
+      enableCommercialEcosystem: false,
+    });
+
+    expect(withEcosystem.commercialEcosystem).not.toBeNull();
+    expect(withEcosystem.commercialEcosystem.businessProfile).toBe('gym');
+    expect(withEcosystem.analysis).toEqual(withoutEcosystem.analysis);
+    expect(withEcosystem.places).toEqual(withoutEcosystem.places);
+    expect(withEcosystem.searchStrategy).toEqual(withoutEcosystem.searchStrategy);
+  });
+
+  it('returns commercialEcosystem: null for a businessType with no profile in the catalog, even when enabled', async () => {
+    const result = await analyze({
+      location: 'Vila Velha, ES',
+      businessType: 'car wash',
+      radiusKm: 5,
+      keywords: [],
+      geocodingProvider: new MockGeocodingProvider(),
+      placesProvider: new MockPlacesProvider(),
+      ...DEFAULT_DEPS,
+      enableCommercialEcosystem: true,
+    });
+
+    expect(result.commercialEcosystem).toBeNull();
+  });
+});

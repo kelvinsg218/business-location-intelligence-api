@@ -33,6 +33,36 @@ const SYNONYMS_TO_GOOGLE_TYPE = {
   salon: 'hair_care',
   'hair salon': 'hair_care',
   'beauty salon': 'beauty_salon',
+
+  'pet shop': 'pet_store',
+  'pet store': 'pet_store',
+  petshop: 'pet_store',
+  'loja de animais': 'pet_store',
+  'loja de pet': 'pet_store',
+
+  'clothing store': 'clothing_store',
+  roupas: 'clothing_store',
+  'loja de roupas': 'clothing_store',
+
+  bakery: 'bakery',
+  padaria: 'bakery',
+  confeitaria: 'bakery',
+
+  bar: 'bar',
+  pub: 'bar',
+  boteco: 'bar',
+
+  'convenience store': 'convenience_store',
+  'loja de conveniencia': 'convenience_store',
+
+  'dental clinic': 'dental_clinic',
+  dentist: 'dental_clinic',
+  dentista: 'dental_clinic',
+  'clinica odontologica': 'dental_clinic',
+
+  'medical clinic': 'medical_clinic',
+  'clinica medica': 'medical_clinic',
+  'consultorio medico': 'medical_clinic',
 };
 
 function normalize(text) {

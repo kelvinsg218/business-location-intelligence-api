@@ -1,16 +1,63 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe, it, expect, beforeEach,
+} from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import App from './App.jsx';
 
-describe('App navigation', () => {
+function loginAsRoot() {
+  fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'root' } });
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: '1' } });
+  fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+}
+
+describe('App login gate', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it('shows the login page before authenticating, not the app', () => {
+    render(<App />);
+    expect(screen.getByLabelText('Usuário')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Nova Análise' })).not.toBeInTheDocument();
+  });
+
+  it('shows an error and stays on the login page for wrong credentials', () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'root' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+
+    expect(screen.getByText('Usuário ou senha inválidos.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Nova Análise' })).not.toBeInTheDocument();
+  });
+
+  it('enters the app after logging in with root/1, and logging out returns to the login page', () => {
+    render(<App />);
+    loginAsRoot();
+
+    expect(screen.getByRole('heading', { name: 'Nova Análise' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /sair/i }));
+    expect(screen.getByLabelText('Usuário')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Nova Análise' })).not.toBeInTheDocument();
+  });
+});
+
+describe('App navigation (authenticated)', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   it('starts on the analysis page and shows the empty state', () => {
     render(<App />);
+    loginAsRoot();
     expect(screen.getByRole('heading', { name: 'Nova Análise' })).toBeInTheDocument();
     expect(screen.getByText('Nenhuma análise realizada ainda')).toBeInTheDocument();
   });
 
   it('navigates to the Plans page via the sidebar nav item and back via a plan CTA', () => {
     render(<App />);
+    loginAsRoot();
 
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     fireEvent.click(within(nav).getByRole('button', { name: /Planos/i }));
@@ -32,6 +79,8 @@ describe('App navigation', () => {
 
   it('opens and closes the plan details modal without navigating away', () => {
     render(<App />);
+    loginAsRoot();
+
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     fireEvent.click(within(nav).getByRole('button', { name: /Planos/i }));
 
@@ -48,6 +97,8 @@ describe('App navigation', () => {
 
   it('the feature matrix marks unbuilt features as planned, never as available', () => {
     render(<App />);
+    loginAsRoot();
+
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     fireEvent.click(within(nav).getByRole('button', { name: /Planos/i }));
 

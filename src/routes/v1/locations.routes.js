@@ -16,7 +16,12 @@ function createLocationsRouter(deps) {
    *       Resolves a free-text location to coordinates, searches nearby
    *       establishments of the given business type within the requested
    *       radius using a multi-point coverage strategy, and returns a
-   *       competitor analysis with an opportunity score.
+   *       competitor analysis with an opportunity score. When businessType
+   *       resolves to a known Business Profile, the response also includes
+   *       a `commercialEcosystem` field categorizing nearby complementary
+   *       businesses and potential traffic generators (single-point
+   *       coverage, not a complete census); it is `null` for unmapped
+   *       business types or when disabled via ENABLE_COMMERCIAL_ECOSYSTEM.
    *     parameters:
    *       - in: query
    *         name: location

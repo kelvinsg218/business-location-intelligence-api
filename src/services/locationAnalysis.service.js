@@ -4,6 +4,7 @@ const { ApiError } = require('../utils/ApiError');
 const { kmToMeters } = require('../utils/unitConversion');
 const placesCoverageSearch = require('./placesCoverageSearch');
 const { calculateBasicOpportunityScore } = require('./opportunityScore');
+const commercialEcosystemSearch = require('./commercialEcosystemSearch');
 
 /**
  * Orchestrates the full analysis: geocode -> multi-point coverage search ->
@@ -22,6 +23,7 @@ async function analyze({
   maxSearchPoints,
   gridMinRadiusKm,
   maxPagesPerPoint,
+  enableCommercialEcosystem,
 }) {
   const geocoded = await geocodingProvider.geocode(location);
   if (!geocoded) {
@@ -43,6 +45,14 @@ async function analyze({
 
   const analysis = calculateBasicOpportunityScore({ places, center, radiusKm });
 
+  const commercialEcosystem = await commercialEcosystemSearch.run({
+    center,
+    radiusKm,
+    businessType,
+    placesProvider,
+    enabled: enableCommercialEcosystem,
+  });
+
   return {
     query: {
       location, businessType, radiusKm, radiusMeters: kmToMeters(radiusKm), keywords,
@@ -60,6 +70,7 @@ async function analyze({
       provider: providerNames,
     },
     analysis,
+    commercialEcosystem,
     meta: { generatedAt: new Date().toISOString() },
   };
 }

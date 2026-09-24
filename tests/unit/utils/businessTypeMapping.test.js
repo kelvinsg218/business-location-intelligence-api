@@ -20,6 +20,23 @@ describe('mapBusinessTypeToGoogleType', () => {
     expect(mapBusinessTypeToGoogleType('barbearia')).toBe('hair_care');
   });
 
+  it('maps the business types added for the expanded Business Profile catalog', () => {
+    expect(mapBusinessTypeToGoogleType('pet shop')).toBe('pet_store');
+    expect(mapBusinessTypeToGoogleType('pet store')).toBe('pet_store');
+    expect(mapBusinessTypeToGoogleType('loja de animais')).toBe('pet_store');
+    expect(mapBusinessTypeToGoogleType('clothing store')).toBe('clothing_store');
+    expect(mapBusinessTypeToGoogleType('loja de roupas')).toBe('clothing_store');
+    expect(mapBusinessTypeToGoogleType('bakery')).toBe('bakery');
+    expect(mapBusinessTypeToGoogleType('padaria')).toBe('bakery');
+    expect(mapBusinessTypeToGoogleType('bar')).toBe('bar');
+    expect(mapBusinessTypeToGoogleType('boteco')).toBe('bar');
+    expect(mapBusinessTypeToGoogleType('convenience store')).toBe('convenience_store');
+    expect(mapBusinessTypeToGoogleType('dental clinic')).toBe('dental_clinic');
+    expect(mapBusinessTypeToGoogleType('dentista')).toBe('dental_clinic');
+    expect(mapBusinessTypeToGoogleType('medical clinic')).toBe('medical_clinic');
+    expect(mapBusinessTypeToGoogleType('clinica medica')).toBe('medical_clinic');
+  });
+
   it('is case-insensitive and accent-insensitive', () => {
     expect(mapBusinessTypeToGoogleType('GYM')).toBe('gym');
     expect(mapBusinessTypeToGoogleType('  Academia  ')).toBe('gym');

@@ -3,7 +3,9 @@ import Sidebar from './Sidebar.jsx';
 import Header from './Header.jsx';
 import styles from './AppShell.module.css';
 
-function AppShell({ children, activeView, onNavigate }) {
+function AppShell({
+  children, activeView, onNavigate, onLogout,
+}) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -13,6 +15,7 @@ function AppShell({ children, activeView, onNavigate }) {
         onClose={() => setSidebarOpen(false)}
         activeView={activeView}
         onNavigate={(view) => { onNavigate(view); setSidebarOpen(false); }}
+        onLogout={onLogout}
       />
       <div className={styles.main}>
         <Header onMenuClick={() => setSidebarOpen(true)} />

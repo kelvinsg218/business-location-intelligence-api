@@ -9,7 +9,7 @@ jest.mock('../../../src/utils/httpClient');
 
 const httpClient = require('../../../src/utils/httpClient');
 const { env } = require('../../../src/config/env');
-const { GooglePlacesProvider, BASIC_FIELD_MASK } = require('../../../src/providers/places/googlePlacesProvider');
+const { GooglePlacesProvider, BASIC_FIELD_MASK, NEARBY_FIELD_MASK } = require('../../../src/providers/places/googlePlacesProvider');
 const { ApiError } = require('../../../src/utils/ApiError');
 
 const BASE_PARAMS = {
@@ -113,5 +113,84 @@ describe('GooglePlacesProvider', () => {
   it('remaps an httpClient timeout to PLACES_TIMEOUT', async () => {
     httpClient.request.mockRejectedValue(new ApiError(504, 'UPSTREAM_TIMEOUT', 'timed out'));
     await expect(provider.search(BASE_PARAMS)).rejects.toMatchObject({ statusCode: 504, code: 'PLACES_TIMEOUT' });
+  });
+
+  describe('searchByTypes', () => {
+    const NEARBY_PARAMS = {
+      lat: -20.3297, lng: -40.2925, radiusMeters: 5000, includedTypes: ['sporting_goods_store', 'yoga_studio'],
+    };
+
+    it('throws CONFIGURATION_ERROR without calling httpClient when the key is missing', async () => {
+      env.GOOGLE_MAPS_API_KEY = '';
+      await expect(provider.searchByTypes(NEARBY_PARAMS)).rejects.toMatchObject({
+        statusCode: 503, code: 'CONFIGURATION_ERROR',
+      });
+      expect(httpClient.request).not.toHaveBeenCalled();
+    });
+
+    it('hits the Nearby Search endpoint (not Text Search), sends includedTypes, the Nearby field mask, and the key in a header never the URL', async () => {
+      httpClient.request.mockResolvedValue({ ok: true, status: 200, body: { places: [] } });
+      await provider.searchByTypes(NEARBY_PARAMS);
+
+      const [url, options] = httpClient.request.mock.calls[0];
+      expect(url).toContain('searchNearby');
+      expect(url).not.toContain('searchText');
+      expect(url).not.toContain('test-key');
+      expect(options.headers['X-Goog-Api-Key']).toBe('test-key');
+      expect(options.headers['X-Goog-FieldMask']).toBe(NEARBY_FIELD_MASK);
+      expect(options.method).toBe('POST');
+      expect(options.body.includedTypes).toEqual(['sporting_goods_store', 'yoga_studio']);
+      expect(options.body.locationRestriction.circle).toEqual({
+        center: { latitude: -20.3297, longitude: -40.2925 }, radius: 5000,
+      });
+      expect(options.body).not.toHaveProperty('textQuery');
+      expect(options.body).not.toHaveProperty('pageToken');
+    });
+
+    it('excludes nextPageToken from the Nearby field mask (Nearby Search has no pagination)', () => {
+      expect(NEARBY_FIELD_MASK).not.toMatch(/nextPageToken/);
+      expect(NEARBY_FIELD_MASK).not.toMatch(/rating|priceLevel|OpeningHours/);
+    });
+
+    it('maps a successful response into the places contract shape, with no nextPageToken field', async () => {
+      httpClient.request.mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: {
+          places: [{
+            id: 'place2',
+            displayName: { text: 'Corporate Tower' },
+            formattedAddress: 'Av. Test, 200',
+            location: { latitude: -20.33, longitude: -40.29 },
+            types: ['corporate_office'],
+            primaryType: 'corporate_office',
+            businessStatus: 'OPERATIONAL',
+          }],
+        },
+      });
+
+      const result = await provider.searchByTypes(NEARBY_PARAMS);
+      expect(result).toEqual({
+        places: [{
+          placeId: 'place2',
+          name: 'Corporate Tower',
+          address: 'Av. Test, 200',
+          location: { lat: -20.33, lng: -40.29 },
+          types: ['corporate_office'],
+          primaryType: 'corporate_office',
+          businessStatus: 'OPERATIONAL',
+        }],
+      });
+    });
+
+    it('reuses the same error-status mapping as search() (429/502/400/502 default)', async () => {
+      httpClient.request.mockResolvedValue({ ok: false, status: 429, body: { error: { status: 'RESOURCE_EXHAUSTED' } } });
+      await expect(provider.searchByTypes(NEARBY_PARAMS)).rejects.toMatchObject({ statusCode: 429, code: 'PLACES_QUOTA_EXCEEDED' });
+    });
+
+    it('remaps an httpClient timeout to PLACES_TIMEOUT', async () => {
+      httpClient.request.mockRejectedValue(new ApiError(504, 'UPSTREAM_TIMEOUT', 'timed out'));
+      await expect(provider.searchByTypes(NEARBY_PARAMS)).rejects.toMatchObject({ statusCode: 504, code: 'PLACES_TIMEOUT' });
+    });
   });
 });

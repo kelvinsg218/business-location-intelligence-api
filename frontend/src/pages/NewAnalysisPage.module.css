@@ -7,7 +7,7 @@
 .header h1 {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-heading);
 }
 
 .header p {
