@@ -5,6 +5,7 @@ const { ApiError } = require('../../utils/ApiError');
 const httpClient = require('../../utils/httpClient');
 const { env } = require('../../config/env');
 const { remapUpstreamError } = require('../../utils/remapUpstreamError');
+const { boundingBoxForCircle } = require('../../utils/geo');
 const { logger } = require('../../utils/logger');
 
 const SEARCH_TEXT_URL = 'https://places.googleapis.com/v1/places:searchText';
@@ -108,12 +109,18 @@ class GooglePlacesProvider extends PlacesProviderContract {
   }) {
     assertConfigured();
 
+    // Text Search (New) accepts only a rectangle as locationRestriction (a circle
+    // is valid for locationBias, which does not restrict). So the search area is
+    // the bounding box of the requested circle; its corners can reach slightly
+    // past the circle, and placesCoverageSearch's haversine filter drops those.
+    const box = boundingBoxForCircle({ lat, lng }, radiusMeters / 1000);
+
     const body = {
       textQuery: buildTextQuery(businessType, keywords),
       locationRestriction: {
-        circle: {
-          center: { latitude: lat, longitude: lng },
-          radius: radiusMeters,
+        rectangle: {
+          low: { latitude: box.low.lat, longitude: box.low.lng },
+          high: { latitude: box.high.lat, longitude: box.high.lng },
         },
       },
       maxResultCount: 20,

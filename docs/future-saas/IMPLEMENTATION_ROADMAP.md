@@ -8,6 +8,16 @@
 > similar client project) ever needs to become a real SaaS, there's a
 > sensible order to build it in instead of starting from zero.
 
+> **SUPERSEDED (v0.2.1).** The phase order below (accounts → plans →
+> payments → history/export → API access) no longer reflects the direction:
+> accounts, projects, candidate locations, saved analyses and demographic
+> data now take priority over plans and billing, and the map has to be
+> migrated to the Google Maps JavaScript API before Google content can be
+> shown publicly. Kept only as historical background — see the README's
+> "Planned Features" for the current direction. The "What exists today" list
+> below is also out of date (it predates the Business Profiles / Commercial
+> Ecosystem work); the README describes the current state.
+
 ## What exists today (do not rebuild)
 
 - `GET /api/v1/locations/analyze` and `GET /health` — working, tested REST endpoints
@@ -19,6 +29,10 @@
 None of the phases below touch this — they wrap around it.
 
 ## Phase 1 — Accounts & Authentication
+
+> **Delivered in v0.3.0** (as `users` + `sessions` with server-side sessions; see the README's
+> "Authentication" section). Note that `/locations/analyze` did **not** stay open, as the last bullet
+> below imagined: it now requires a signed-in user.
 
 - Add a `users` table (see [`DATABASE_SCHEMA_EXAMPLE.md`](./DATABASE_SCHEMA_EXAMPLE.md))
 - Add login/signup (or delegate to an auth provider — Auth0, Clerk, Supabase Auth, etc.)

@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { PLANS } from '../config/plans.js';
 import PlanCard from '../components/plans/PlanCard.jsx';
 import FeatureMatrix from '../components/plans/FeatureMatrix.jsx';
 import PlanDetailsModal from '../components/plans/PlanDetailsModal.jsx';
 import styles from './PlansPage.module.css';
 
-function PlansPage({ onNavigateToAnalysis }) {
+function PlansPage() {
+  const navigate = useNavigate();
   const [detailsPlan, setDetailsPlan] = useState(null);
+  const onNavigateToAnalysis = () => navigate('/app');
 
   return (
     <div className={styles.page}>
@@ -15,7 +18,7 @@ function PlansPage({ onNavigateToAnalysis }) {
         <p>
           A análise de localização já está disponível hoje no plano Free.
           Pro e Business fazem parte do roadmap do produto e são mostrados aqui
-          como prévia — ainda não existe sistema de conta ou cobrança.
+          como prévia — ainda não existe cobrança nem troca de plano.
         </p>
       </header>
 

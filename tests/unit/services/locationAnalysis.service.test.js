@@ -36,7 +36,7 @@ describe('locationAnalysis.service.analyze (against mocks)', () => {
     expect(new Date(result.meta.generatedAt).toString()).not.toBe('Invalid Date');
   });
 
-  it('reports zero establishments as a valid (not error) outcome, with max opportunity score', async () => {
+  it('reports zero establishments as a valid (not error) outcome, with the maximum indicator value', async () => {
     const result = await analyze({
       location: 'Vila Velha, ES',
       businessType: '__zero_results__',

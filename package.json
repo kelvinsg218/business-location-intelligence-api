@@ -1,7 +1,7 @@
 {
   "name": "business-location-intelligence-api",
-  "version": "0.2.0",
-  "description": "REST API that analyzes business competition/opportunity within a radius of a free-text location, using Google Geocoding + Places (New) APIs.",
+  "version": "0.3.0",
+  "description": "REST API that analyzes business competition within a radius of a free-text location, using Google Geocoding + Places (New) APIs.",
   "main": "src/server.js",
   "license": "UNLICENSED",
   "private": true,
@@ -9,13 +9,19 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
+    "test:unit": "jest --testPathIgnorePatterns tests/db/",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "db:init": "node scripts/db-init.js",
+    "db:wait": "node scripts/wait-for-db.js",
+    "db:migrate": "node-pg-migrate up --migrations-dir db/migrations",
+    "db:migrate:test": "node-pg-migrate up --migrations-dir db/migrations --database-url-var TEST_DATABASE_URL",
+    "db:migrate:create": "node-pg-migrate create --migrations-dir db/migrations --migration-file-language sql"
   },
   "engines": {
-    "node": ">=18.16.0"
+    "node": ">=24"
   },
   "overrides": {
     "swagger-jsdoc": {
@@ -23,11 +29,15 @@
     }
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "cors": "^2.8.6",
     "dotenv": "^18.0.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
+    "express-session": "^1.19.0",
     "helmet": "^8.3.0",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.0",
     "pino": "^9.14.0",
     "pino-http": "^10.5.0",
     "swagger-jsdoc": "^6.3.0",
@@ -40,5 +50,11 @@
     "jest": "^30.5.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
+  },
+  "allowScripts": {
+    "argon2": false,
+    "unrs-resolver": false,
+    "@parcel/watcher": false,
+    "@scarf/scarf": false
   }
 }

@@ -22,10 +22,13 @@ function competitionLevelFor(score) {
 }
 
 /**
- * MVP opportunity scoring, kept in its own module (not inlined into
+ * MVP competitor-density indicator (exposed as `opportunityScore`, a name kept
+ * for API compatibility), kept in its own module (not inlined into
  * locationAnalysis.service.js) so a future calculateAdvancedOpportunityScore
  * can be added alongside it and selected by config, without redesigning the
- * service. 0-100, higher = more opportunity (less saturated market).
+ * service. 0-100, higher = fewer competitors per km² and a wider spread of
+ * the ones found. It is descriptive only: it does not measure demand and is
+ * not a recommendation.
  */
 function calculateBasicOpportunityScore({ places, center, radiusKm }) {
   const competitorCount = places.length;
@@ -43,7 +46,7 @@ function calculateBasicOpportunityScore({ places, center, radiusKm }) {
       scoreBreakdown: { densityScore: 100, distributionScore: 100, weights: WEIGHTS },
       notes: [
         NOTE_METHODOLOGY,
-        'No competitors were found by the search strategy — a valid outcome, not an error, suggesting an open market for this category in this area.',
+        'No competitors were found by the search strategy — a valid outcome, not an error. This indicator measures competitor presence only; it says nothing about demand.',
       ],
     };
   }

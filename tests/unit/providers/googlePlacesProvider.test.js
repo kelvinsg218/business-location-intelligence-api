@@ -11,6 +11,7 @@ const httpClient = require('../../../src/utils/httpClient');
 const { env } = require('../../../src/config/env');
 const { GooglePlacesProvider, BASIC_FIELD_MASK, NEARBY_FIELD_MASK } = require('../../../src/providers/places/googlePlacesProvider');
 const { ApiError } = require('../../../src/utils/ApiError');
+const { destinationPoint } = require('../../../src/utils/geo');
 
 const BASE_PARAMS = {
   lat: -20.3297, lng: -40.2925, radiusMeters: 5000, businessType: 'gym', keywords: [],
@@ -46,15 +47,63 @@ describe('GooglePlacesProvider', () => {
     expect(BASIC_FIELD_MASK).not.toMatch(/rating|priceLevel|OpeningHours/);
   });
 
-  it('builds textQuery from businessType and keywords, and a circle location restriction', async () => {
+  it('builds textQuery from businessType and keywords', async () => {
     httpClient.request.mockResolvedValue({ ok: true, status: 200, body: { places: [] } });
     await provider.search({ ...BASE_PARAMS, keywords: ['crossfit', '24 horas'] });
 
     const [, options] = httpClient.request.mock.calls[0];
     expect(options.body.textQuery).toBe('gym crossfit 24 horas');
-    expect(options.body.locationRestriction.circle).toEqual({
-      center: { latitude: -20.3297, longitude: -40.2925 }, radius: 5000,
-    });
+  });
+
+  // Text Search (New) only accepts a rectangle as locationRestriction; a circle is
+  // only valid for locationBias, which does not restrict results.
+  it('restricts the search with a rectangle (the only locationRestriction shape Text Search supports), never a circle', async () => {
+    httpClient.request.mockResolvedValue({ ok: true, status: 200, body: { places: [] } });
+    await provider.search(BASE_PARAMS);
+
+    const [, options] = httpClient.request.mock.calls[0];
+    const { locationRestriction } = options.body;
+    expect(Object.keys(locationRestriction)).toEqual(['rectangle']);
+    expect(locationRestriction).not.toHaveProperty('circle');
+    expect(options.body).not.toHaveProperty('locationBias');
+
+    const { low, high } = locationRestriction.rectangle;
+    expect(low.latitude).toBeCloseTo(-20.374666, 5);
+    expect(low.longitude).toBeCloseTo(-40.340453, 5);
+    expect(high.latitude).toBeCloseTo(-20.284734, 5);
+    expect(high.longitude).toBeCloseTo(-40.244547, 5);
+  });
+
+  it('sends a valid rectangle: low is south-west of high, and the box contains the whole requested circle', async () => {
+    httpClient.request.mockResolvedValue({ ok: true, status: 200, body: { places: [] } });
+    await provider.search(BASE_PARAMS);
+
+    const { low, high } = httpClient.request.mock.calls[0][1].body.locationRestriction.rectangle;
+    expect(low.latitude).toBeLessThan(high.latitude);
+    expect(low.longitude).toBeLessThan(high.longitude);
+
+    // The box is tight by design, so the circle touches it; allow floating-point noise.
+    const EPS = 1e-9;
+    for (let bearing = 0; bearing < 360; bearing += 15) {
+      const edge = destinationPoint({ lat: BASE_PARAMS.lat, lng: BASE_PARAMS.lng }, BASE_PARAMS.radiusMeters / 1000, bearing);
+      expect(edge.lat).toBeGreaterThanOrEqual(low.latitude - EPS);
+      expect(edge.lat).toBeLessThanOrEqual(high.latitude + EPS);
+      expect(edge.lng).toBeGreaterThanOrEqual(low.longitude - EPS);
+      expect(edge.lng).toBeLessThanOrEqual(high.longitude + EPS);
+    }
+  });
+
+  it('scales the rectangle with the requested radius', async () => {
+    httpClient.request.mockResolvedValue({ ok: true, status: 200, body: { places: [] } });
+    await provider.search({ ...BASE_PARAMS, radiusMeters: 1000 });
+    await provider.search({ ...BASE_PARAMS, radiusMeters: 10000 });
+
+    const heightOf = (call) => {
+      const { low, high } = call[1].body.locationRestriction.rectangle;
+      return high.latitude - low.latitude;
+    };
+    const [small, large] = httpClient.request.mock.calls;
+    expect(heightOf(large) / heightOf(small)).toBeCloseTo(10, 3);
   });
 
   it('maps a successful response into the places contract shape', async () => {

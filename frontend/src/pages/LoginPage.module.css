@@ -106,3 +106,52 @@
 .submit:hover {
   background: var(--color-accent-hover);
 }
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.submit:disabled:hover {
+  background: var(--color-accent);
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--color-negative);
+}
+
+.fieldError {
+  font-size: 12px;
+  color: var(--color-negative);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.notice {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: -12px 0 20px;
+}
+
+.switch {
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.switch a {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.switch a:hover {
+  color: var(--color-accent-hover);
+}

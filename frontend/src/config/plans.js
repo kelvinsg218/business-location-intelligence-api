@@ -30,7 +30,7 @@ export const PLANS = [
     ctaLabel: 'Usar agora',
     ctaKind: 'navigate',
     features: [
-      'Análise de localização com Opportunity Score',
+      'Análise de localização com indicador de concorrência local',
       'Mapa interativo de concorrentes',
       'Métricas essenciais (densidade, distância, nível de concorrência)',
       'Raio de busca limitado (placeholder)',
@@ -88,7 +88,7 @@ export const PLANS = [
 // Cell values: true = available now, 'planned' = on the roadmap, false = not offered.
 export const FEATURE_MATRIX = [
   { label: 'Análise de Localização', values: { free: true, pro: true, business: true } },
-  { label: 'Opportunity Score', values: { free: true, pro: true, business: true } },
+  { label: 'Indicador de Concorrência Local', values: { free: true, pro: true, business: true } },
   { label: 'Mapa Interativo', values: { free: true, pro: true, business: true } },
   { label: 'Raio Maior', values: { free: false, pro: 'planned', business: 'planned' } },
   { label: 'Histórico de Análises', values: { free: false, pro: 'planned', business: 'planned' } },

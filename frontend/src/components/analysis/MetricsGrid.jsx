@@ -6,7 +6,7 @@ import Badge from '../common/Badge.jsx';
 import {
   formatInteger, formatDensity, formatKm, formatKm2,
 } from '../../utils/formatters.js';
-import { competitionLevelLabel, competitionLevelTone } from '../../utils/competitionLevel.js';
+import { competitionLevelLabel } from '../../utils/competitionLevel.js';
 import styles from './MetricsGrid.module.css';
 
 function MetricsGrid({ analysis }) {
@@ -19,7 +19,7 @@ function MetricsGrid({ analysis }) {
         icon={Gauge}
         label="Nível de concorrência"
         value={(
-          <Badge tone={competitionLevelTone(analysis.competitionLevel)}>
+          <Badge tone="neutral">
             {competitionLevelLabel(analysis.competitionLevel)}
           </Badge>
         )}

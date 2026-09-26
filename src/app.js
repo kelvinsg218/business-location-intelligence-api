@@ -9,24 +9,41 @@ const { createRoutes } = require('./routes');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { notFound } = require('./middlewares/notFound');
 const { createRateLimiter } = require('./middlewares/rateLimiter');
+const { requestId, REQUEST_ID_HEADER } = require('./middlewares/requestId');
 const { logger } = require('./utils/logger');
 const { buildSwaggerSpec } = require('./config/swagger');
 
 const DEFAULT_RATE_LIMIT = { windowMs: 15 * 60 * 1000, max: 100 };
 
 /**
- * Builds the Express app with injected provider dependencies. Never
- * instantiates a vendor provider itself — that's server.js's job, via
- * providerFactory. This is what lets tests wire in mocks/fakes untouched.
- * `rateLimit` is an optional override (mainly for tests); it is not exposed
- * via env, matching the approved plan's minimal env var surface.
+ * Builds the Express app with injected dependencies. Never instantiates a
+ * vendor provider, a database pool or an auth module itself — that's
+ * server.js's job. This is what lets tests wire in mocks/fakes untouched.
+ *
+ *   db            pg Pool (or anything with .query); only /ready uses it directly
+ *   auth          the object made by createAuthModule(); WITHOUT it every protected
+ *                 route answers 401, i.e. the app fails closed
+ *   corsOrigins   origins allowed to call the API cross-origin, with credentials.
+ *                 Empty (default) = no CORS headers at all: same-origin only,
+ *                 which is how both dev (Vite proxy) and production run
+ *   trustProxy    hops of reverse proxy to trust for req.ip / secure cookies
+ *
+ * `rateLimit` and `logger` are optional overrides (mainly for tests).
  */
-function createApp({ rateLimit, ...deps }) {
+function createApp({
+  rateLimit, logger: appLogger = logger, corsOrigins = [], trustProxy = 0, ...deps
+}) {
   const app = express();
 
+  app.set('trust proxy', trustProxy);
+
+  // First, so every response (including rate-limit and 404 ones) carries an id.
+  app.use(requestId);
   app.use(helmet());
-  app.use(cors());
-  app.use(pinoHttp({ logger }));
+  if (corsOrigins.length > 0) {
+    app.use(cors({ origin: corsOrigins, credentials: true, exposedHeaders: [REQUEST_ID_HEADER] }));
+  }
+  app.use(pinoHttp({ logger: appLogger }));
   app.use(createRateLimiter({ ...DEFAULT_RATE_LIMIT, ...rateLimit }));
 
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(buildSwaggerSpec()));

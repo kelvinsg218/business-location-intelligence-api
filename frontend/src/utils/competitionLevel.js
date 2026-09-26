@@ -1,13 +1,8 @@
 const LABELS = { low: 'Baixa', medium: 'Média', high: 'Alta' };
 
-// "low" competition is good news for an entrant, so it maps to the positive
-// tone even though nothing about the word itself says that.
-const TONES = { low: 'positive', medium: 'neutral', high: 'negative' };
-
+// The competition level only describes how many competitors were found. It is
+// deliberately not mapped to a good/bad color: a low count can mean an
+// underserved area or simply no demand, and this data cannot tell which.
 export function competitionLevelLabel(level) {
   return LABELS[level] || level || '—';
-}
-
-export function competitionLevelTone(level) {
-  return TONES[level] || 'neutral';
 }

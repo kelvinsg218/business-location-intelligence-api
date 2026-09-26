@@ -6,7 +6,7 @@ const { destinationPoint, haversineDistanceKm } = require('../../../src/utils/ge
 const CENTER = { lat: -20.3297, lng: -40.2925 };
 
 describe('calculateBasicOpportunityScore', () => {
-  it('returns maximum opportunity (100) when there are zero competitors', () => {
+  it('returns the maximum indicator value (100) when there are zero competitors', () => {
     const result = calculateBasicOpportunityScore({ places: [], center: CENTER, radiusKm: 10 });
 
     expect(result.competitorCount).toBe(0);
@@ -14,6 +14,27 @@ describe('calculateBasicOpportunityScore', () => {
     expect(result.opportunityScore).toBe(100);
     expect(result.competitionLevel).toBe('low');
     expect(result.scoreBreakdown).toEqual({ densityScore: 100, distributionScore: 100, weights: WEIGHTS });
+  });
+
+  describe('language stays descriptive (no market/opportunity/recommendation claims)', () => {
+    // \bopportunity\b flags the loose word but not the API field name "opportunityScore".
+    const FORBIDDEN = /open market|untapped|underserved|\bopportunity\b|recommend|promising|good (location|area|market)|should (open|invest)/i;
+
+    it('explains zero competitors as a valid outcome that says nothing about demand', () => {
+      const { notes } = calculateBasicOpportunityScore({ places: [], center: CENTER, radiusKm: 10 });
+      const text = notes.join(' ');
+
+      expect(text).toMatch(/valid outcome, not an error/i);
+      expect(text).toMatch(/says nothing about demand/i);
+      expect(text).not.toMatch(FORBIDDEN);
+    });
+
+    it('uses no market/opportunity/recommendation wording in the notes for a non-empty result either', () => {
+      const places = [{ location: destinationPoint(CENTER, 3, 0) }];
+      const { notes } = calculateBasicOpportunityScore({ places, center: CENTER, radiusKm: 10 });
+
+      expect(notes.join(' ')).not.toMatch(FORBIDDEN);
+    });
   });
 
   it('computes density/distribution/score exactly per the documented formula', () => {

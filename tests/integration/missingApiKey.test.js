@@ -12,10 +12,12 @@ const request = require('supertest');
 const { createApp } = require('../../src/app');
 const { createProviders } = require('../../src/config/providerFactory');
 const { env } = require('../../src/config/env');
+const { createTestAuth } = require('../helpers/testAuth');
 
 function buildRealApp() {
   const { geocodingProvider, placesProvider, providerNames } = createProviders(env);
   return createApp({
+    auth: createTestAuth(),
     geocodingProvider,
     placesProvider,
     providerNames,

@@ -3,6 +3,7 @@
 const {
   haversineDistanceKm,
   destinationPoint,
+  boundingBoxForCircle,
   generateSearchGrid,
   ABSOLUTE_MAX_SEARCH_POINTS,
 } = require('../../../src/utils/geo');
@@ -37,6 +38,70 @@ describe('destinationPoint', () => {
   it('moving east (bearing 90) increases longitude', () => {
     const moved = destinationPoint(VILA_VELHA, 10, 90);
     expect(moved.lng).toBeGreaterThan(VILA_VELHA.lng);
+  });
+});
+
+describe('boundingBoxForCircle', () => {
+  it('matches an independently derived box for a 5km circle in Vila Velha', () => {
+    const box = boundingBoxForCircle(VILA_VELHA, 5);
+
+    expect(box.low.lat).toBeCloseTo(-20.374666, 5);
+    expect(box.low.lng).toBeCloseTo(-40.340453, 5);
+    expect(box.high.lat).toBeCloseTo(-20.284734, 5);
+    expect(box.high.lng).toBeCloseTo(-40.244547, 5);
+  });
+
+  it('puts low at the south-west corner and high at the north-east corner (the order Google requires)', () => {
+    const box = boundingBoxForCircle(VILA_VELHA, 5);
+
+    expect(box.low.lat).toBeLessThan(box.high.lat);
+    expect(box.low.lng).toBeLessThan(box.high.lng);
+    expect(box.low.lat).toBeLessThan(VILA_VELHA.lat);
+    expect(box.high.lat).toBeGreaterThan(VILA_VELHA.lat);
+  });
+
+  it('contains every point of the circle, at any bearing, for several radii and latitudes', () => {
+    const centers = [VILA_VELHA, { lat: -23.5505, lng: -46.6333 }, { lat: 0, lng: 10 }, { lat: 60, lng: 25 }];
+    const EPS = 1e-9;
+
+    centers.forEach((center) => {
+      [0.5, 5, 20].forEach((radiusKm) => {
+        const box = boundingBoxForCircle(center, radiusKm);
+        for (let bearing = 0; bearing < 360; bearing += 5) {
+          const edge = destinationPoint(center, radiusKm, bearing);
+          expect(edge.lat).toBeGreaterThanOrEqual(box.low.lat - EPS);
+          expect(edge.lat).toBeLessThanOrEqual(box.high.lat + EPS);
+          expect(edge.lng).toBeGreaterThanOrEqual(box.low.lng - EPS);
+          expect(edge.lng).toBeLessThanOrEqual(box.high.lng + EPS);
+        }
+      });
+    });
+  });
+
+  it('is tight: its east and west edges sit about one radius from the center', () => {
+    const box = boundingBoxForCircle(VILA_VELHA, 5);
+
+    expect(haversineDistanceKm(VILA_VELHA, { lat: VILA_VELHA.lat, lng: box.high.lng })).toBeCloseTo(5, 1);
+    expect(haversineDistanceKm(VILA_VELHA, { lat: VILA_VELHA.lat, lng: box.low.lng })).toBeCloseTo(5, 1);
+    expect(haversineDistanceKm(VILA_VELHA, { lat: box.high.lat, lng: VILA_VELHA.lng })).toBeCloseTo(5, 1);
+    expect(haversineDistanceKm(VILA_VELHA, { lat: box.low.lat, lng: VILA_VELHA.lng })).toBeCloseTo(5, 1);
+  });
+
+  it('normalizes longitudes into [-180, 180) when the circle crosses the antimeridian', () => {
+    const box = boundingBoxForCircle({ lat: 0, lng: 179.99 }, 5);
+
+    expect(box.low.lng).toBeGreaterThanOrEqual(-180);
+    expect(box.high.lng).toBeLessThan(180);
+    expect(box.high.lng).toBeLessThan(0);
+    expect(box.low.lng).toBeGreaterThan(0);
+  });
+
+  it('keeps latitudes within [-90, 90] and the box no wider than 180 degrees near a pole', () => {
+    const box = boundingBoxForCircle({ lat: 89.99, lng: 0 }, 20);
+
+    expect(box.high.lat).toBeLessThanOrEqual(90);
+    expect(box.low.lat).toBeGreaterThanOrEqual(-90);
+    expect(box.high.lng - box.low.lng).toBeLessThanOrEqual(180);
   });
 });
 

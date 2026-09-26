@@ -25,7 +25,7 @@ function NewAnalysisPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>Nova Análise</h1>
-        <p>Descubra oportunidades de negócio com dados geográficos e análise de concorrência.</p>
+        <p>Analise a concorrência e o contexto comercial ao redor de um ponto, com dados geográficos.</p>
       </header>
 
       <AnalysisForm

@@ -5,9 +5,13 @@ const { createApp } = require('../../src/app');
 const { MockGeocodingProvider } = require('../../src/providers/geocoding/mockGeocodingProvider');
 const { MockPlacesProvider } = require('../../src/providers/places/mockPlacesProvider');
 const { ApiError } = require('../../src/utils/ApiError');
+const { createTestAuth } = require('../helpers/testAuth');
 
+// Signed-in user stand-in: this suite is about the analysis itself. The
+// authentication requirement is covered in tests/integration/analyzeAuth.test.js.
 function buildApp(overrides = {}) {
   return createApp({
+    auth: createTestAuth(),
     geocodingProvider: new MockGeocodingProvider(),
     placesProvider: new MockPlacesProvider(),
     providerNames: { geocoding: 'mock', places: 'mock' },

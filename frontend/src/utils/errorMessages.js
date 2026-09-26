@@ -3,6 +3,8 @@ const MESSAGES_BY_CODE = {
   LOCATION_NOT_FOUND: 'Não foi possível localizar a região informada.',
   RATE_LIMITED: 'Limite de consultas atingido. Tente novamente em alguns instantes.',
   NETWORK_ERROR: 'Não foi possível conectar ao servidor. Verifique se a API está em execução.',
+  UNAUTHENTICATED: 'Sua sessão expirou. Entre novamente para continuar.',
+  DATABASE_UNAVAILABLE: 'O serviço está temporariamente indisponível. Tente novamente em instantes.',
 };
 
 const MESSAGES_BY_STATUS = {

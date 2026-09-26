@@ -44,6 +44,37 @@ function destinationPoint(center, distanceKm, bearingDegrees) {
   return { lat: toDegrees(lat2), lng: toDegrees(lng2) };
 }
 
+// Normalizes a longitude in degrees into [-180, 180).
+function normalizeLongitude(degrees) {
+  return ((((degrees + 180) % 360) + 360) % 360) - 180;
+}
+
+// Smallest lat/lng rectangle that contains the circle of `radiusKm` around
+// `center`, as { low: south-west corner, high: north-east corner }. Used where
+// a provider accepts a rectangle but not a circle as a hard restriction. A
+// circle that crosses the antimeridian comes back with low.lng > high.lng (the
+// inverted range convention); near a pole the longitude half-width is capped at
+// 90 degrees so the box never exceeds 180 degrees of width.
+function boundingBoxForCircle(center, radiusKm) {
+  const angularDistance = radiusKm / EARTH_RADIUS_KM;
+  const latRadians = toRadians(center.lat);
+
+  const deltaLatDegrees = toDegrees(angularDistance);
+  const lngRatio = Math.sin(angularDistance) / Math.cos(latRadians);
+  const deltaLngDegrees = lngRatio >= 1 ? 90 : toDegrees(Math.asin(lngRatio));
+
+  return {
+    low: {
+      lat: Math.max(-90, center.lat - deltaLatDegrees),
+      lng: normalizeLongitude(center.lng - deltaLngDegrees),
+    },
+    high: {
+      lat: Math.min(90, center.lat + deltaLatDegrees),
+      lng: normalizeLongitude(center.lng + deltaLngDegrees),
+    },
+  };
+}
+
 function ring(center, distanceKm, subRadiusKm, count) {
   const points = [];
   for (let i = 0; i < count; i += 1) {
@@ -86,5 +117,6 @@ module.exports = {
   ABSOLUTE_MAX_SEARCH_POINTS,
   haversineDistanceKm,
   destinationPoint,
+  boundingBoxForCircle,
   generateSearchGrid,
 };

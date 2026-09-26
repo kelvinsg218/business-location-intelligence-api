@@ -36,9 +36,15 @@ export default [
     },
   },
   {
-    files: ['vite.config.js', 'src/test/**/*.js', '**/*.test.jsx'],
+    files: ['vite.config.js', 'src/test/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
+  },
+  {
+    // Test helpers are not hot-reloaded components; they may export functions
+    // next to a tiny helper component.
+    files: ['src/test/**/*.{js,jsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 ];

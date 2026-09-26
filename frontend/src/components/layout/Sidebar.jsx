@@ -1,25 +1,26 @@
+import { NavLink, useNavigate } from 'react-router';
 import {
   Search, History, Compass, CreditCard, BookOpen, X, MapPinned, LogOut,
 } from 'lucide-react';
 import Badge from '../common/Badge.jsx';
-import { API_BASE_URL } from '../../services/locationApi.js';
+import { API_BASE_URL } from '../../api/apiClient.js';
 import styles from './Sidebar.module.css';
 
-// Items with a `view` are real, working pages — clicking them switches
-// App.jsx's active view. Items without one are not built yet and stay
-// disabled with a "soon" badge instead of pretending to work.
+// Items with a `to` are real, working pages (routes under /app). Items without
+// one are not built yet and stay disabled with a "soon" badge instead of
+// pretending to work.
 const NAV_ITEMS = [
   {
-    id: 'analysis', label: 'Nova Análise', icon: Search, view: 'analysis',
+    id: 'analysis', label: 'Nova Análise', icon: Search, to: '/app', end: true,
   },
   {
-    id: 'history', label: 'Histórico', icon: History, view: null,
+    id: 'history', label: 'Histórico', icon: History, to: null,
   },
   {
-    id: 'explore', label: 'Explorar', icon: Compass, view: null,
+    id: 'explore', label: 'Explorar', icon: Compass, to: null,
   },
   {
-    id: 'plans', label: 'Planos', icon: CreditCard, view: 'plans',
+    id: 'plans', label: 'Planos', icon: CreditCard, to: '/app/plans',
   },
 ];
 
@@ -28,8 +29,10 @@ const NAV_ITEMS = [
 const DOCS_URL = `${API_BASE_URL}/api-docs`;
 
 function Sidebar({
-  isOpen, onClose, activeView, onNavigate, onLogout,
+  isOpen, onClose, user, onLogout, loggingOut, logoutError,
 }) {
+  const navigate = useNavigate();
+
   return (
     <>
       <div
@@ -53,23 +56,34 @@ function Sidebar({
 
         <nav className={styles.nav} aria-label="Navegação principal">
           {NAV_ITEMS.map(({
-            id, label, icon: Icon, view,
+            id, label, icon: Icon, to, end,
           }) => {
-            const isActive = view !== null && view === activeView;
+            if (to === null) {
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.navItem}
+                  disabled
+                  title="Em breve"
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  <span>{label}</span>
+                  <Badge tone="muted">Em breve</Badge>
+                </button>
+              );
+            }
             return (
-              <button
+              <NavLink
                 key={id}
-                type="button"
-                className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-                disabled={view === null}
-                aria-current={isActive ? 'page' : undefined}
-                title={view === null ? 'Em breve' : undefined}
-                onClick={view ? () => onNavigate(view) : undefined}
+                to={to}
+                end={end}
+                onClick={onClose}
+                className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
               >
                 <Icon size={18} aria-hidden="true" />
                 <span>{label}</span>
-                {view === null && <Badge tone="muted">Em breve</Badge>}
-              </button>
+              </NavLink>
             );
           })}
 
@@ -88,14 +102,20 @@ function Sidebar({
           <div className={styles.planCard}>
             <p className={styles.planLabel}>Plano atual</p>
             <p className={styles.planName}>Free</p>
-            <button type="button" className={styles.planCta} onClick={() => onNavigate('plans')}>
+            <button
+              type="button"
+              className={styles.planCta}
+              onClick={() => { onClose(); navigate('/app/plans'); }}
+            >
               Ver planos
             </button>
           </div>
-          <button type="button" className={styles.logoutButton} onClick={onLogout}>
+          {user && <p className={styles.userName} title={user.email}>{user.name}</p>}
+          <button type="button" className={styles.logoutButton} onClick={onLogout} disabled={loggingOut}>
             <LogOut size={16} aria-hidden="true" />
-            Sair
+            {loggingOut ? 'Saindo…' : 'Sair'}
           </button>
+          {logoutError && <p className={styles.logoutError} role="alert">{logoutError}</p>}
         </div>
       </aside>
     </>

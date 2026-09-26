@@ -62,7 +62,7 @@ Request
   → check usage-this-period < entitlements.monthlyAnalyses
        → over limit? reject with a typed error (e.g. 'USAGE_LIMIT_EXCEEDED')
   → allow request through to the existing, unchanged analyzeLocation controller
-  → on success, record one unit of usage (see DATABASE_SCHEMA_EXAMPLE.md's `usage` table)
+  → on success, record one unit of usage (see DATABASE_SCHEMA_EXAMPLE.md's `usage` table — that schema is superseded, see the notice there)
 ```
 
 An illustrative (non-imported) version of this middleware lives at

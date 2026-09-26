@@ -41,7 +41,7 @@ this slot specifically.
 project.
 
 **Suggested composition:** a **real screenshot** of the running dashboard
-— ideally the success state showing the map, Opportunity Score ring and
+— ideally the success state showing the map, competition-indicator ring and
 metric cards after a completed analysis (mock mode is fine and honest to
 show, since the "Mock Mode" badge is visible and explains itself).
 

@@ -32,6 +32,32 @@ describe('analyzeLocation', () => {
     expect(calledUrl).toContain('radius=5');
   });
 
+  it('is a same-origin call that carries the session cookie, and no token of its own', async () => {
+    fetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, data: {} }),
+    });
+
+    await analyzeLocation({ location: 'Vila Velha, ES', businessType: 'gym', radiusKm: 5 });
+
+    const [url, init] = fetch.mock.calls[0];
+    expect(url.startsWith('/api/v1/locations/analyze?')).toBe(true);
+    expect(init.credentials).toBe('include');
+    expect(Object.keys(init.headers).map((name) => name.toLowerCase())).not.toContain('authorization');
+  });
+
+  it('surfaces a 401 UNAUTHENTICATED as an ApiRequestError the auth layer can react to', async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ success: false, error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.', details: [] } }),
+    });
+
+    await expect(analyzeLocation({ location: 'x y', businessType: 'gym', radiusKm: 5 }))
+      .rejects.toMatchObject({ status: 401, code: 'UNAUTHENTICATED' });
+  });
+
   it('omits the keywords param entirely when not provided', async () => {
     fetch.mockResolvedValue({
       ok: true,

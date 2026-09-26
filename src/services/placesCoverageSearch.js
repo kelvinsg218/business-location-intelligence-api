@@ -77,6 +77,7 @@ async function run({
   const limitations = [
     'establishmentsFound reflects what the search strategy found, not a guaranteed count of every real establishment in the area.',
     `Each search point returns at most 20 results per page (${maxPagesPerPoint} page(s) requested per point).`,
+    'A search point may query a slightly larger area than its circle (its bounding box); results outside the requested radius are always discarded by a distance filter, and results near the edges of that area may be crowded out by the per-page result cap.',
   ];
   if (failedQueries > 0) {
     limitations.push(`${failedQueries} of ${grid.length} search queries failed and were skipped; coverage may be reduced in that area.`);

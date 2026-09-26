@@ -3,10 +3,21 @@
 > **FUTURE IMPLEMENTATION**
 > **NOT USED IN CURRENT PRODUCTION VERSION**
 >
-> No database exists in the current application. There is no ORM, no
-> migrations, and nothing is persisted between requests — the API is
-> stateless today. This document is conceptual planning only; no database
-> is installed or configured as part of this repository.
+> **Update (v0.3.0):** a PostgreSQL database now exists, with exactly two
+> tables — `users` and `sessions` — created by the migrations under
+> `db/migrations`. There is still no ORM. The tables below are conceptual
+> planning only; where they differ from the real `users` table (for
+> example the column set and constraints), the migration is the source of
+> truth. Nothing else in this document (plans, subscriptions, usage, ...) is
+> built.
+
+> **SUPERSEDED (v0.2.1).** The product direction was refined after this
+> document was written: real accounts, projects, candidate locations and
+> saved analyses now come before subscriptions and billing, and Google's
+> terms restrict which Google content may be stored (see the README's
+> "Google Maps Platform terms" section). The plan/subscription/usage-centered
+> schema below will **not** be used as-is. It is kept only as historical
+> background — see the README's "Planned Features" for the current direction.
 
 ## Conceptual tables
 

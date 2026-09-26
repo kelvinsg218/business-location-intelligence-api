@@ -10,7 +10,7 @@ function EmptyState() {
       <h2 className={styles.title}>Nenhuma análise realizada ainda</h2>
       <p className={styles.text}>
         Preencha os parâmetros acima e clique em &quot;Analisar&quot; para visualizar o mapa,
-        o Opportunity Score, os concorrentes encontrados e as métricas da região.
+        o indicador de concorrência local, os concorrentes encontrados e as métricas da região.
       </p>
     </div>
   );

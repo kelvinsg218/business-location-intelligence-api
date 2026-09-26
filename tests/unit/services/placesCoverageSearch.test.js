@@ -2,7 +2,7 @@
 
 const placesCoverageSearch = require('../../../src/services/placesCoverageSearch');
 const { MockPlacesProvider } = require('../../../src/providers/places/mockPlacesProvider');
-const { haversineDistanceKm } = require('../../../src/utils/geo');
+const { haversineDistanceKm, boundingBoxForCircle } = require('../../../src/utils/geo');
 
 const VILA_VELHA = { lat: -20.3297, lng: -40.2925 };
 
@@ -108,6 +108,44 @@ describe('placesCoverageSearch.run (against hand-crafted fakes)', () => {
     });
 
     expect(result.places).toEqual([]);
+  });
+
+  // A provider that restricts by rectangle (Google Text Search) can return a place in
+  // a corner of the box that lies outside the requested circle; the haversine filter
+  // must still drop it, while a place inside the circle is kept.
+  it('drops a place in a corner of the provider search rectangle that lies outside the requested radius', async () => {
+    const radiusKm = 2;
+    const box = boundingBoxForCircle(VILA_VELHA, radiusKm);
+    const corner = {
+      placeId: 'box-corner',
+      name: 'Corner Gym',
+      location: { lat: box.high.lat, lng: box.high.lng },
+      businessStatus: 'OPERATIONAL',
+    };
+    const inside = {
+      placeId: 'inside-circle',
+      name: 'Inside Gym',
+      location: { lat: VILA_VELHA.lat + 0.005, lng: VILA_VELHA.lng + 0.005 },
+      businessStatus: 'OPERATIONAL',
+    };
+    expect(haversineDistanceKm(VILA_VELHA, corner.location)).toBeGreaterThan(radiusKm);
+    expect(haversineDistanceKm(VILA_VELHA, inside.location)).toBeLessThan(radiusKm);
+
+    const fakeProvider = { search: async () => ({ places: [corner, inside], nextPageToken: null }) };
+    const result = await placesCoverageSearch.run({
+      ...BASE_PARAMS, radiusKm, businessType: 'gym', keywords: [], placesProvider: fakeProvider,
+    });
+
+    expect(result.places.map((p) => p.placeId)).toEqual(['inside-circle']);
+  });
+
+  it('always documents the bounding-area search and the distance filter in searchStrategy.limitations', async () => {
+    const fakeProvider = { search: async () => ({ places: [], nextPageToken: null }) };
+    const result = await placesCoverageSearch.run({
+      ...BASE_PARAMS, radiusKm: 2, businessType: 'gym', keywords: [], placesProvider: fakeProvider,
+    });
+
+    expect(result.searchStrategy.limitations.some((l) => l.includes('bounding box') && l.includes('distance filter'))).toBe(true);
   });
 
   it('continues with partial results when some grid points fail, and reports it', async () => {

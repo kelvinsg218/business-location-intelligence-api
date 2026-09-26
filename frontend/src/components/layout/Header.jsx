@@ -1,5 +1,5 @@
 import { Menu, ExternalLink } from 'lucide-react';
-import { API_BASE_URL } from '../../services/locationApi.js';
+import { API_BASE_URL } from '../../api/apiClient.js';
 import styles from './Header.module.css';
 
 const DOCS_URL = `${API_BASE_URL}/api-docs`;

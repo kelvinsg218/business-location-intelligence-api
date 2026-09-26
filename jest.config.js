@@ -5,4 +5,5 @@ module.exports = {
   testMatch: ['**/tests/**/*.test.js'],
   clearMocks: true,
   setupFiles: ['<rootDir>/tests/setupEnv.js'],
+  globalSetup: '<rootDir>/tests/globalSetup.js',
 };
